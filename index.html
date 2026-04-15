@@ -59,7 +59,7 @@
             <label class="block text-sm font-bold text-ky-pink mb-1 mt-4">車出し（配車）は可能ですか？</label>
             <div class="space-y-3 bg-[#1a1a1a] p-4 rounded border border-gray-700">
               <input v-model="regForm.vehicleName" type="text" placeholder="車両の呼び名 (例: 山田父号)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
-              <input v-model="regForm.vehicleType" type="text" placeholder="車種 (例: アルファード)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
+              <input v-model="regForm.vehicleType" type="text" placeholder="車種 (例: アルファード, ノア等)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
               <input v-model="regForm.vehicleCapacity" type="number" placeholder="乗車定員 (運転手含む)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
               <p class="text-[10px] text-gray-400">※車出しをしない場合は空欄のままでOKです。</p>
             </div>
@@ -125,11 +125,9 @@
                   <span class="text-sm flex-1">{{ formatDate(event.date) }} {{ event.title }}</span>
                 </label>
               </div>
-
               <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
               <p class="text-[10px] text-gray-400 mb-1">※この枠内のテキストは手動で書き換えることができます。</p>
               <textarea v-model="customScheduleText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 focus:border-ky-line outline-none text-xs font-mono leading-relaxed"></textarea>
-
               <button @click="shareToLine(customScheduleText)" :disabled="selectedShareEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 text-sm">
                 LINEグループに送信する
               </button>
@@ -138,14 +136,11 @@
             <div v-if="shareType === 'allocation'" class="space-y-4">
               <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択</label>
               <select v-model="shareAllocationEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm">
-                <option disabled value="">イベントを選択</option>
-                <option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
+                <option disabled value="">イベントを選択</option><option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
               </select>
-
               <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
               <p class="text-[10px] text-gray-400 mb-1">※この枠内のテキストは手動で書き換えることができます。</p>
               <textarea v-model="customAllocationText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 outline-none text-xs font-mono leading-relaxed"></textarea>
-
               <button @click="shareToLine(customAllocationText)" :disabled="!shareAllocationEventId" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 text-sm">
                 LINEグループに配車表を送信
               </button>
@@ -185,7 +180,7 @@
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【持物】</span>
                   <div class="flex-1"><p>{{ event.items }}</p></div>
                 </div>
-
+                
                 <div v-if="event.comment || event.notes" class="mt-3 p-2 bg-[#222222] rounded text-xs border border-gray-700">
                   <p v-if="event.comment" class="mb-1"><span class="text-ky-pink font-bold">監督より: </span>{{ event.comment }}</p>
                   <p v-if="event.notes"><span class="text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
@@ -444,7 +439,7 @@
         const departureMaster = ref([]);
         const itemMaster = ref([]);
 
-        // 🌟 完全保証：新規登録用ステート
+        // 🌟 確実な修復：新規登録フォームのステート（vehicleTypeを含む）
         const regForm = reactive({ name: '', role: '保護者(父)', hasFamily: 'no', selectedFamilyId: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const availableFamilies = ref([]);
         const isRegistering = ref(false);
@@ -473,7 +468,7 @@
 
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
-        // 🌟 完全保証：初期化関数（checkUserを呼ぶ）
+        // 🌟 確実な修復：初期化関数でユーザーチェックを行う
         const initLiff = async () => {
           appState.value = 'loading';
           try {
@@ -487,7 +482,7 @@
           } catch (error) { handleError('初期化エラー', error); }
         };
 
-        // 🌟 完全保証：ユーザーの存在チェック
+        // 🌟 確実な修復：ユーザーの存在チェックと新規登録画面への遷移
         const checkUser = async () => {
           try {
             const res = await fetch(`${GAS_URL}?action=checkUser&lineId=${profile.value.userId}`);
@@ -503,7 +498,7 @@
           } catch (error) { handleError('ユーザー確認エラー', error); }
         };
 
-        // 🌟 完全保証：新規ユーザー登録処理
+        // 🌟 確実な修復：新規ユーザーの送信処理
         const submitRegistration = async () => {
           isRegistering.value = true;
           const payload = { action: 'registerUser', data: { lineId: profile.value.userId, ...regForm } };
