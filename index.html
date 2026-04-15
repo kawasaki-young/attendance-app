@@ -42,26 +42,26 @@
         
         <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
           
-          <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">出欠</button>
+          <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定</button>
           
-          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">家族</button>
+          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">家族</button>
           
           <template v-if="myRole === '監督'">
-            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">出欠状況</button>
-            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">行事作成</button>
+            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">出欠状況</button>
+            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
           </template>
           
-          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">配車管理</button>
+          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車管理</button>
           
-          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">配車表</button>
+          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車表</button>
 
-          <button v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'share'" :class="currentTab === 'share' ? 'bg-ky-line text-white font-bold shadow-md' : 'bg-[#222222] text-ky-line border border-ky-line/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">LINE共有</button>
+          <button v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'share'" :class="currentTab === 'share' ? 'bg-ky-line text-white font-bold shadow-md' : 'bg-[#222222] text-ky-line border border-ky-line/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">LINE共有</button>
 
         </div>
 
         <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-6">
-          <label class="block text-sm font-bold text-ky-pink mb-2">確認するイベントを選択</label>
-          <select v-model="globalEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-ky-pink outline-none">
+          <label class="block text-xs font-bold text-ky-pink mb-2">確認するイベントを選択</label>
+          <select v-model="globalEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-ky-pink outline-none text-sm">
             <option disabled value="">イベントを選択してください</option>
             <option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
           </select>
@@ -70,12 +70,12 @@
         <div v-if="currentTab === 'share'" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-ky-line shadow-lg shadow-ky-line/10">
             <div class="flex space-x-2 mb-6 bg-[#1a1a1a] p-1 rounded-lg">
-              <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-sm rounded">📅 行事予定の共有</button>
-              <button v-if="myRole !== '監督'" @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-sm rounded">🚗 配車表の共有</button>
+              <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">行事予定の共有</button>
+              <button v-if="myRole !== '監督'" @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">配車表の共有</button>
             </div>
 
             <div v-if="shareType === 'schedule'" class="space-y-4">
-              <label class="block text-sm font-bold text-ky-line">1. 共有するイベントを選択 <span class="text-xs text-gray-400 font-normal">(複数選択可)</span></label>
+              <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択 <span class="text-[10px] text-gray-400 font-normal">(複数選択可)</span></label>
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 max-h-48 overflow-y-auto space-y-2">
                 <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
                   <input type="checkbox" :value="event.id" v-model="selectedShareEvents" class="accent-ky-line w-5 h-5">
@@ -83,27 +83,27 @@
                 </label>
               </div>
 
-              <label class="block text-sm font-bold text-ky-line pt-4">2. 送信文面のプレビュー</label>
-              <textarea :value="generatedScheduleText" readonly rows="12" class="w-full bg-[#1a1a1a] text-gray-300 px-3 py-3 rounded-lg border border-gray-700 outline-none text-xs font-mono leading-relaxed"></textarea>
+              <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
+              <p class="text-[10px] text-gray-400 mb-1">※この枠内のテキストは手動で書き換えることができます。</p>
+              <textarea v-model="customScheduleText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 focus:border-ky-line focus:ring-1 focus:ring-ky-line outline-none text-xs font-mono leading-relaxed"></textarea>
 
-              <button @click="shareToLine(generatedScheduleText)" :disabled="selectedShareEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 flex items-center justify-center">
-                <svg class="w-6 h-6 mr-2 fill-current" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 3.54 8.936 8.529 9.608.333.053.776.166.892.499.105.3.068.766.033 1.077-.04.348-.192.932-.192.932s-.05.236.14.342c.192.107.564.043.564.043s.827-.14 1.94-.582c1.114-.44 2.593-1.07 3.593-1.636 4.354-2.316 6.501-5.719 6.501-10.283z"/></svg>
-                LINEグループに予定を送信する
+              <button @click="shareToLine(customScheduleText)" :disabled="selectedShareEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 flex items-center justify-center text-sm">
+                LINEグループに送信する
               </button>
             </div>
 
             <div v-if="shareType === 'allocation'" class="space-y-4">
-              <label class="block text-sm font-bold text-ky-line">1. 共有するイベントを選択</label>
+              <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択</label>
               <select v-model="shareAllocationEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-ky-line outline-none text-sm">
                 <option disabled value="">イベントを選択</option>
                 <option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
               </select>
 
-              <label class="block text-sm font-bold text-ky-line pt-4">2. 送信文面のプレビュー</label>
-              <textarea :value="generatedAllocationText" readonly rows="12" class="w-full bg-[#1a1a1a] text-gray-300 px-3 py-3 rounded-lg border border-gray-700 outline-none text-xs font-mono leading-relaxed"></textarea>
+              <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
+              <p class="text-[10px] text-gray-400 mb-1">※この枠内のテキストは手動で書き換えることができます。</p>
+              <textarea v-model="customAllocationText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 focus:border-ky-line focus:ring-1 focus:ring-ky-line outline-none text-xs font-mono leading-relaxed"></textarea>
 
-              <button @click="shareToLine(generatedAllocationText)" :disabled="!shareAllocationEventId" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 flex items-center justify-center">
-                <svg class="w-6 h-6 mr-2 fill-current" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 3.54 8.936 8.529 9.608.333.053.776.166.892.499.105.3.068.766.033 1.077-.04.348-.192.932-.192.932s-.05.236.14.342c.192.107.564.043.564.043s.827-.14 1.94-.582c1.114-.44 2.593-1.07 3.593-1.636 4.354-2.316 6.501-5.719 6.501-10.283z"/></svg>
+              <button @click="shareToLine(customAllocationText)" :disabled="!shareAllocationEventId" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 flex items-center justify-center text-sm">
                 LINEグループに配車表を送信
               </button>
             </div>
@@ -111,7 +111,7 @@
         </div>
 
         <div v-if="currentTab === 'events'" class="space-y-6">
-          <div v-if="events.length === 0" class="text-center py-10 text-gray-500">現在登録されているイベントはありません。</div>
+          <div v-if="events.length === 0" class="text-center py-10 text-gray-500">現在登録されている予定はありません。</div>
           <div v-for="event in sortedEvents" :key="event.id" class="bg-[#111111] rounded-xl border border-gray-800 overflow-hidden shadow-lg">
             
             <div class="bg-gradient-to-r from-gray-900 to-[#1a1a1a] p-4 border-b border-ky-pink/30">
@@ -121,7 +121,7 @@
                   <span class="font-bold text-ky-pink w-16 flex-shrink-0">【出発】</span>
                   <div class="flex-1">
                     <p><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span><span v-if="event.gatherTime" class="text-xs text-gray-500 ml-1">(集合 {{ formatTime(event.gatherTime) }})</span></p>
-                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline">🗺️ 出発場所MAP</a>
+                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline">出発場所MAP</a>
                   </div>
                 </div>
                 <div class="flex items-start">
@@ -129,7 +129,7 @@
                   <div class="flex-1">
                     <p><span v-if="event.startTime">{{ formatTime(event.startTime) }}〜 </span><span v-if="event.location">@{{ event.location }}</span></p>
                     <p v-if="event.gInTime" class="text-xs text-gray-400">(G-in {{ formatTime(event.gInTime) }})</p>
-                    <a v-if="event.mapUrl" :href="event.mapUrl" target="_blank" class="text-[10px] text-blue-400 underline">🗺️ 活動場所MAP</a>
+                    <a v-if="event.mapUrl" :href="event.mapUrl" target="_blank" class="text-[10px] text-blue-400 underline">活動場所MAP</a>
                   </div>
                 </div>
                 <div v-if="event.items" class="flex items-start"><span class="font-bold text-ky-pink w-16 flex-shrink-0">【持物】</span><div class="flex-1"><p>{{ event.items }}</p></div></div>
@@ -157,14 +157,14 @@
                     </div>
                   </div>
                 </div>
-                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center">
+                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center text-sm">
                   <span v-if="isSubmittingEvent === event.id" class="animate-spin h-4 w-4 border-2 border-ky-black rounded-full border-t-transparent mr-2"></span>
-                  {{ isSubmittingEvent === event.id ? '送信中...' : 'このイベントの出欠を確定・送信する' }}
+                  {{ isSubmittingEvent === event.id ? '送信中...' : '出欠を確定・送信する' }}
                 </button>
               </template>
               
-              <button v-if="myRole === '監督'" @click="openEditModal(event)" class="w-full mt-2 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition hover:bg-blue-500 flex justify-center items-center">
-                📝 イベント内容を修正する
+              <button v-if="myRole === '監督'" @click="openEditModal(event)" class="w-full mt-2 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition hover:bg-blue-500 flex justify-center items-center text-sm">
+                イベント内容を修正する
               </button>
             </div>
           </div>
@@ -174,14 +174,14 @@
           <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
             <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">あなたの家族構成</h3>
             <ul class="space-y-3 mb-6"><li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800"><span class="font-medium">{{ member.name }}</span><span class="text-xs px-2 py-1 bg-gray-800 rounded text-gray-400">{{ member.role }}</span></li></ul>
-            <h4 class="font-bold text-sm text-gray-300 mb-3 mt-6">＋ 新しい家族（選手）を追加</h4>
+            <h4 class="font-bold text-xs text-gray-300 mb-3 mt-6">＋ 新しい家族（選手）を追加</h4>
             <form @submit.prevent="addFamilyMember" class="space-y-3">
-              <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none">
+              <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm">
               <div class="flex space-x-2">
-                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer" :class="newMember.role === '選手' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
-                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer" :class="newMember.role === '家族' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
+                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm" :class="newMember.role === '選手' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
+                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm" :class="newMember.role === '家族' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
               </div>
-              <button type="submit" :disabled="isSaving" class="w-full mt-2 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg border border-gray-600">追加する</button>
+              <button type="submit" :disabled="isSaving" class="w-full mt-2 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg border border-gray-600 text-sm">追加する</button>
             </form>
           </div>
         </div>
@@ -189,44 +189,44 @@
         <div v-if="currentTab === 'director' && globalEventId" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
             <div class="bg-[#1a1a1a] p-4 rounded-lg border border-gray-800 mb-6">
-              <p class="text-sm font-bold text-gray-300 mb-3">＋ チームバス・監督車の手配</p>
+              <p class="text-xs font-bold text-gray-300 mb-3">＋ チームバス・監督車の手配</p>
               <div class="flex space-x-2">
-                <select v-model="dummyForm.type" class="flex-1 bg-[#222222] text-sm text-white px-3 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink"><option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option></select>
-                <input v-model="dummyForm.capacity" type="number" placeholder="定員(人)" class="w-24 bg-[#222222] text-sm text-white px-3 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink">
-                <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-pink text-ky-black px-4 py-2 text-sm font-bold rounded disabled:opacity-50">追加</button>
+                <select v-model="dummyForm.type" class="flex-1 bg-[#222222] text-xs text-white px-2 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink"><option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option></select>
+                <input v-model="dummyForm.capacity" type="number" placeholder="定員" class="w-20 bg-[#222222] text-xs text-white px-2 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink">
+                <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-pink text-ky-black px-3 py-2 text-xs font-bold rounded disabled:opacity-50">追加</button>
               </div>
             </div>
             <div class="mb-6">
-              <h3 class="text-sm font-bold text-ky-pink mb-3 border-b border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
+              <h3 class="text-xs font-bold text-ky-pink mb-3 border-b border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
               <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">選手</p><p class="text-2xl font-bold text-white">{{ directorStats.players }}<span class="text-xs font-normal">名</span></p></div>
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">大人</p><p class="text-2xl font-bold text-white">{{ directorStats.parents }}<span class="text-xs font-normal">名</span></p></div>
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">他</p><p class="text-2xl font-bold text-white">{{ directorStats.family }}<span class="text-xs font-normal">名</span></p></div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">選手</p><p class="text-xl font-bold text-white">{{ directorStats.players }}</p></div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">大人</p><p class="text-xl font-bold text-white">{{ directorStats.parents }}</p></div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">他</p><p class="text-xl font-bold text-white">{{ directorStats.family }}</p></div>
               </div>
             </div>
             <div class="space-y-4">
-              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.players" :key="p.id" class="bg-gray-800 text-gray-200 text-xs px-2 py-1 rounded">{{ p.name }}</span></div></div>
-              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加大人（審判・ウグイス等）</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-700 text-gray-300 text-xs px-2 py-1 rounded">{{ p.name }} <span class="text-[10px] text-ky-pink">{{ p.role }}</span></span></div></div>
+              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.players" :key="p.id" class="bg-gray-800 text-gray-200 text-[10px] px-2 py-1 rounded">{{ p.name }}</span></div></div>
+              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加大人（審判・ウグイス等）</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-700 text-gray-300 text-[10px] px-2 py-1 rounded">{{ p.name }} <span class="text-ky-pink">{{ p.role }}</span></span></div></div>
             </div>
           </div>
         </div>
 
         <div v-if="currentTab === 'allocation' && globalEventId" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
-            <label class="block text-sm font-bold text-ky-pink mb-2">乗車待ちのメンバー（未配車）</label>
+            <label class="block text-xs font-bold text-ky-pink mb-2">乗車待ちのメンバー（未配車）</label>
             <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 h-40 overflow-y-auto mb-4 space-y-2">
               <p v-if="unassignedPassengers.length === 0" class="text-xs text-gray-500 text-center mt-4">全員の配車が完了しています！</p>
               <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition"><input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-pink w-4 h-4"><span class="text-sm flex-1">{{ passenger.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(passenger.userId) }})</span></span></label>
             </div>
-            <label class="block text-sm font-bold text-ky-pink mb-2">どの車両に乗せますか？</label>
-            <select v-model="targetVehicleId" class="w-full px-4 py-3 mb-4 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none"><option disabled value="">車両を選択してください</option><option v-for="car in availableCars" :key="car.userId" :value="car.userId">{{ getVehicleDisplayName(car) }}</option></select>
-            <button @click="executeAllocation" :disabled="selectedPassengers.length === 0 || !targetVehicleId || isAllocating" class="w-full bg-ky-pink text-ky-black font-extrabold py-3 rounded-lg shadow-md transition disabled:opacity-50">{{ isAllocating ? '保存中...' : '割り当てる' }}</button>
+            <label class="block text-xs font-bold text-ky-pink mb-2">どの車両に乗せますか？</label>
+            <select v-model="targetVehicleId" class="w-full px-4 py-3 mb-4 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm"><option disabled value="">車両を選択してください</option><option v-for="car in availableCars" :key="car.userId" :value="car.userId">{{ getVehicleDisplayName(car) }}</option></select>
+            <button @click="executeAllocation" :disabled="selectedPassengers.length === 0 || !targetVehicleId || isAllocating" class="w-full bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition disabled:opacity-50 text-sm">{{ isAllocating ? '保存中...' : '割り当てる' }}</button>
           </div>
           <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
             <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">車両別 配車状況</h3>
             <div class="space-y-4">
               <div v-for="car in availableCars" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-sm">{{ getVehicleDisplayName(car) }}</span></div>
+                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-xs">{{ getVehicleDisplayName(car) }}</span></div>
                 <ul class="p-2 space-y-1"><li v-for="p in getPassengersInCar(car.userId)" :key="p.userId" class="flex justify-between items-center text-sm px-2 py-1 rounded hover:bg-gray-800"><span>{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></span><button @click="unassign(p.userId)" class="text-[10px] text-red-400 border border-red-900 px-2 py-1 rounded hover:bg-red-900 transition">解除</button></li></ul>
               </div>
             </div>
@@ -238,44 +238,44 @@
             <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">配車表</h3>
             <div class="space-y-4 mb-6">
               <div v-for="car in availableCars" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-sm">{{ getVehicleDisplayName(car) }}</span></div>
+                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-xs">{{ getVehicleDisplayName(car) }}</span></div>
                 <ul class="p-2 space-y-1 text-sm"><li v-for="p in getPassengersInCar(car.userId)" :key="p.userId" class="px-2 py-1">{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></li></ul>
               </div>
             </div>
-            <h3 class="font-bold text-yellow-500 mb-3 border-b border-gray-800 pb-2 text-sm">配車待ち（未定）</h3>
-            <div class="flex flex-wrap gap-2"><span v-for="p in unassignedPassengers" :key="p.userId" class="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded">{{ p.name }}</span></div>
+            <h3 class="font-bold text-yellow-500 mb-3 border-b border-gray-800 pb-2 text-xs">配車待ち（未定）</h3>
+            <div class="flex flex-wrap gap-2"><span v-for="p in unassignedPassengers" :key="p.userId" class="bg-gray-800 text-gray-300 text-[10px] px-2 py-1 rounded">{{ p.name }}</span></div>
           </div>
         </div>
 
         <div v-if="currentTab === 'create_event'" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-green-500 shadow-lg shadow-green-500/10">
-            <div class="mb-4 border-b border-gray-800 pb-2"><h2 class="text-lg font-bold text-green-400">➕ 新しい行事を作成</h2></div>
+            <div class="mb-4 border-b border-gray-800 pb-2"><h2 class="text-lg font-bold text-green-400">新しい行事を作成</h2></div>
             <form @submit.prevent="submitEvent" class="space-y-5">
               <div class="grid grid-cols-2 gap-3">
-                <div><label class="block text-xs font-bold text-gray-400 mb-1">種別 <span class="text-red-500">*</span></label><select v-model="evForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option></select></div>
-                <div><label class="block text-xs font-bold text-gray-400 mb-1">日付 <span class="text-red-500">*</span></label><input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">種別 <span class="text-red-500">*</span></label><select v-model="evForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option></select></div>
+                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">日付 <span class="text-red-500">*</span></label><input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               </div>
-              <div><label class="block text-xs font-bold text-gray-400 mb-1">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+              <div><label class="block text-[10px] font-bold text-gray-400 mb-1">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
                 <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
                 <div><select v-model="evForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
                 <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded"><label class="text-xs text-ky-pink w-1/3 font-bold">集合時間</label><div class="w-2/3 flex space-x-2"><select v-model="evForm.gatherOffset" class="w-1/2 bg-[#222222] text-white px-2 py-1 rounded border border-gray-700 outline-none text-xs"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select><input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-[#111111] text-ky-pink font-bold px-2 py-1 rounded border border-gray-700 outline-none text-xs"></div></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded"><label class="text-[10px] text-ky-pink w-1/3 font-bold">集合時間</label><div class="w-2/3 flex space-x-2"><select v-model="evForm.gatherOffset" class="w-1/2 bg-[#222222] text-white px-2 py-1 rounded border border-gray-700 outline-none text-xs"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select><input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-[#111111] text-ky-pink font-bold px-2 py-1 rounded border border-gray-700 outline-none text-xs"></div></div>
               </div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
                 <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
                 <div><select v-model="evForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">選択してください</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
                 <div v-if="evForm.locationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">G-in 時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">開始時間</label><input v-model="evForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">G-in 時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">開始時間</label><input v-model="evForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               </div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                <label class="block text-xs font-bold text-gray-400 mb-2">【持物】 (複数選択可)</label>
-                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-500"><span class="text-xs text-gray-300">{{ item }}</span></label></div>
+                <label class="block text-[10px] font-bold text-gray-400 mb-2">【持物】 (複数選択可)</label>
+                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-500"><span class="text-[10px] text-gray-300">{{ item }}</span></label></div>
                 <div class="flex space-x-2"><input v-model="evForm.newItem" type="text" placeholder="その他..." class="flex-1 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-xs"><button type="button" @click="addNewItem" :disabled="!evForm.newItem" class="bg-gray-700 text-white px-3 py-2 text-xs rounded disabled:opacity-50">追加</button></div>
               </div>
               
@@ -283,7 +283,7 @@
                 <div><textarea v-model="evForm.comment" rows="2" placeholder="監督コメント" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea></div>
                 <div><textarea v-model="evForm.notes" rows="1" placeholder="全体備考" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea></div>
               </div>
-              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 text-ky-black font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50">{{ isCreating ? '作成中...' : '行事を作成する' }}</button>
+              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 text-ky-black font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50 text-sm">{{ isCreating ? '作成中...' : '行事を作成する' }}</button>
             </form>
           </div>
         </div>
@@ -291,7 +291,7 @@
         <div v-if="isEditing" class="fixed inset-0 bg-black/90 z-[100] overflow-y-auto px-4 py-10 flex justify-center items-start">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-blue-500 shadow-2xl shadow-blue-500/20 w-full max-w-lg relative">
             <button @click="closeEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
-            <h2 class="text-lg font-bold text-blue-400 mb-4">📝 イベント内容の修正</h2>
+            <h2 class="text-lg font-bold text-blue-400 mb-4">イベント内容の修正</h2>
             <form @submit.prevent="submitEditEvent" class="space-y-5">
               <div class="grid grid-cols-2 gap-3">
                 <div><select v-model="editForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option></select></div>
@@ -300,24 +300,24 @@
               <div><input v-model="editForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-xs font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
+                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
                 <select v-model="editForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
                 <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-2"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">集合時間</label><input v-model="editForm.gatherTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">集合時間</label><input v-model="editForm.gatherTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               </div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-xs font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
+                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
                 <select v-model="editForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">選択してください</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
                 <div v-if="editForm.locationSelect === 'NEW'" class="space-y-2"><input v-model="editForm.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="editForm.newLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">G-in 時間</label><input v-model="editForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">開始時間</label><input v-model="editForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">G-in 時間</label><input v-model="editForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">開始時間</label><input v-model="editForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               </div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                <label class="block text-xs font-bold text-gray-400 mb-2">持ち物 (複数選択可)</label>
-                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="editForm.selectedItems" class="accent-blue-500"><span class="text-xs text-gray-300">{{ item }}</span></label></div>
+                <label class="block text-[10px] font-bold text-gray-400 mb-2">持ち物 (複数選択可)</label>
+                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="editForm.selectedItems" class="accent-blue-500"><span class="text-[10px] text-gray-300">{{ item }}</span></label></div>
               </div>
 
               <div class="space-y-3">
@@ -326,8 +326,8 @@
               </div>
 
               <div class="flex space-x-3 pt-4 border-t border-gray-800">
-                <button type="button" @click="closeEditModal" class="flex-1 bg-gray-800 text-white font-bold py-3 rounded-lg">キャンセル</button>
-                <button type="submit" :disabled="isSavingEdit" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg">{{ isSavingEdit ? '保存中...' : '上書き保存する' }}</button>
+                <button type="button" @click="closeEditModal" class="flex-1 bg-gray-800 text-white font-bold py-3 rounded-lg text-sm">キャンセル</button>
+                <button type="submit" :disabled="isSavingEdit" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg text-sm">{{ isSavingEdit ? '保存中...' : '上書き保存' }}</button>
               </div>
             </form>
           </div>
@@ -338,7 +338,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted, reactive, computed } = Vue;
+    const { createApp, ref, onMounted, reactive, computed, watch } = Vue;
 
     createApp({
       setup() {
@@ -370,6 +370,10 @@
         const shareType = ref('schedule');
         const selectedShareEvents = ref([]);
         const shareAllocationEventId = ref('');
+        
+        // 🌟 修正：プレビュー文面を手動編集可能にするためのリアクティブ変数
+        const customScheduleText = ref('');
+        const customAllocationText = ref('');
 
         const newMember = reactive({ name: '', role: '選手' });
         const isSaving = ref(false);
@@ -418,11 +422,11 @@
         const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
         const getCarStatus = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.carStatus : null; };
 
+        // 🌟 自動生成されるテキスト（ベース用）
         const generatedScheduleText = computed(() => {
           if (selectedShareEvents.value.length === 0) return '';
           let text = '週末の予定をお知らせします。\n\n';
           const targetEvents = sortedEvents.value.filter(e => selectedShareEvents.value.includes(e.id));
-          
           targetEvents.forEach(e => {
             text += `◆${formatDate(e.date)} ${e.title}\n`;
             if (e.departureTime || e.depLocation) {
@@ -436,16 +440,17 @@
             const gin = e.gInTime ? `(G-in ${formatTime(e.gInTime)})` : '';
             text += `【予定】${start}${loc} ${gin}\n`;
             if (e.mapUrl) text += `📍活動MAP: ${e.mapUrl}\n`;
-            
             if (e.items) text += `【持物】${e.items}\n`;
             if (e.comment) text += `【監督より】${e.comment}\n`;
             if (e.notes) text += `【備考】${e.notes}\n`;
             text += '\n';
           });
-          text += '👇 出欠入力・詳細はこちら 👇\n';
-          text += APP_URL;
+          text += '👇 出欠入力・詳細はこちら 👇\n'; text += APP_URL;
           return text;
         });
+
+        // 🌟 自動生成テキストが変わった時、編集用ボックスにコピーする
+        watch(generatedScheduleText, (newVal) => { customScheduleText.value = newVal; });
 
         const getPassengersInCar = (carId, evtId) => attendanceRecords.value.filter(r => r.eventId === evtId && r.assignTo === carId);
         
@@ -453,31 +458,29 @@
           if (!shareAllocationEventId.value) return '';
           const targetEvent = events.value.find(e => e.id === shareAllocationEventId.value);
           if (!targetEvent) return '';
-
           let text = '🚗 配車表のお知らせ 🚗\n';
           text += `◆${formatDate(targetEvent.date)} ${targetEvent.title}\n\n`;
           const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.isDummy));
-          
           carsInEvent.forEach(car => {
             let carName = car.isDummy ? car.name : '';
-            if (!car.isDummy) {
-              const user = allUsers.value.find(u => u.id === car.userId);
-              carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`;
-            }
+            if (!car.isDummy) { const user = allUsers.value.find(u => u.id === car.userId); carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; }
             text += `【${carName}】\n`;
             const passengers = getPassengersInCar(car.userId, targetEvent.id);
             if (passengers.length === 0) { text += '・空席\n'; } 
             else { passengers.forEach(p => { text += `・${p.name} (${getUserRole(p.userId)})\n`; }); }
             text += '\n';
           });
-          text += '👇 自分の配車確認はこちら 👇\n';
-          text += APP_URL;
+          text += '👇 自分の配車確認はこちら 👇\n'; text += APP_URL;
           return text;
         });
 
+        // 🌟 自動生成テキストが変わった時、編集用ボックスにコピーする
+        watch(generatedAllocationText, (newVal) => { customAllocationText.value = newVal; });
+
+        // 🌟 LINEへ共有する関数
         const shareToLine = async (textToShare) => {
           if (!liff.isApiAvailable('shareTargetPicker')) {
-            alert('LINE共有機能がサポートされていません。\nテキストをコピーして貼り付けてください。'); return;
+            alert('【エラー】LINE共有機能は「外部ブラウザ(Safari/Chrome等)」では動作しません。\n必ずLINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
           }
           try {
             const res = await liff.shareTargetPicker([{ type: 'text', text: textToShare }]);
@@ -609,7 +612,7 @@
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent,
-          shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, shareToLine
+          shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine
         };
       }
     }).mount('#app');
