@@ -161,7 +161,6 @@
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
                 <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
-                
                 <div>
                   <label class="block text-[10px] text-gray-400 mb-1">出発場所</label>
                   <select v-model="evForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
@@ -174,7 +173,6 @@
                     <input v-model="evForm.newDepLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
                   </div>
                 </div>
-
                 <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
                 <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded">
                   <label class="text-xs text-ky-pink w-1/3 font-bold">集合時間</label>
@@ -187,7 +185,6 @@
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
                 <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
-                
                 <div>
                   <label class="block text-[10px] text-gray-400 mb-1">活動場所 <span class="text-red-500">*</span></label>
                   <select v-model="evForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
@@ -200,7 +197,6 @@
                     <input v-model="evForm.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
                   </div>
                 </div>
-
                 <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">G-in 時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
                 <div class="flex items-center justify-between"><label class="text-xs text-gray-300 w-1/3">開始時間</label><input v-model="evForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               </div>
@@ -419,7 +415,7 @@
         const events = ref([]);
         const attendanceRecords = ref([]); 
         const locationMaster = ref([]);
-        const departureMaster = ref([]); // 🌟
+        const departureMaster = ref([]);
         const itemMaster = ref([]);
 
         const newMember = reactive({ name: '', role: '選手' });
@@ -431,26 +427,12 @@
         const isAllocating = ref(false);
         const dummyForm = reactive({ type: 'チームバス', capacity: '' });
 
-        // 🌟 修正：行事作成フォーム
-        const evForm = reactive({ 
-          type: '練習', detail: '', date: '', 
-          locationSelect: '', newLocationName: '', newLocationUrl: '', 
-          depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '',
-          departureTime: '', gatherOffset: 5, gInTime: '', startTime: '', 
-          selectedItems: [], newItem: '', comment: '', notes: '' 
-        });
+        const evForm = reactive({ type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherOffset: 5, gInTime: '', startTime: '', selectedItems: [], newItem: '', comment: '', notes: '' });
         const isCreating = ref(false);
 
-        // 🌟 修正：行事修正フォーム
         const isEditing = ref(false);
         const isSavingEdit = ref(false);
-        const editForm = reactive({ 
-          eventId: '', type: '練習', detail: '', date: '', 
-          locationSelect: '', newLocationName: '', newLocationUrl: '', 
-          depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '',
-          departureTime: '', gatherTime: '', gInTime: '', startTime: '', 
-          selectedItems: [], comment: '', notes: '' 
-        });
+        const editForm = reactive({ eventId: '', type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gInTime: '', startTime: '', selectedItems: [], comment: '', notes: '' });
 
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
@@ -517,14 +499,13 @@
           return timeStr.substring(0,5);
         };
         
-        // 🌟 モーダルを開く処理の更新
         const openEditModal = (ev) => {
           const match = ev.title.match(/\((.*?)\)$/);
           editForm.eventId = ev.id; editForm.type = ev.type || '練習'; editForm.detail = match ? match[1] : '';
           const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
           
           editForm.locationSelect = ev.location || ''; editForm.newLocationName = ''; editForm.newLocationUrl = '';
-          editForm.depLocationSelect = ev.depLocation || ''; editForm.newDepLocationName = ''; editForm.newDepLocationUrl = ''; // 🌟
+          editForm.depLocationSelect = ev.depLocation || ''; editForm.newDepLocationName = ''; editForm.newDepLocationUrl = '';
           
           editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
           editForm.gInTime = formatTimeForInput(ev.gInTime); editForm.startTime = formatTimeForInput(ev.startTime);
@@ -533,7 +514,6 @@
         };
         const closeEditModal = () => { isEditing.value = false; };
         
-        // 🌟 モーダル保存処理の更新
         const submitEditEvent = async () => {
           isSavingEdit.value = true;
           const isNewLoc = editForm.locationSelect === 'NEW';
@@ -550,7 +530,7 @@
             data: {
               eventId: editForm.eventId, eventType: editForm.type, eventTitle: fullTitle, date: editForm.date,
               locationName: locName, locationUrl: locUrl, isNewLocation: isNewLoc,
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, // 🌟
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc,
               departureTime: editForm.departureTime, gatherTime: editForm.gatherTime, gInTime: editForm.gInTime, startTime: editForm.startTime,
               itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
@@ -622,7 +602,7 @@
         };
 
         const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
-        const getDepLocUrl = (name) => { const dep = departureMaster.value.find(d => d.name === name); return dep ? dep.url : ''; }; // 🌟
+        const getDepLocUrl = (name) => { const dep = departureMaster.value.find(d => d.name === name); return dep ? dep.url : ''; };
         
         const computedGatherTime = computed(() => {
           if (!evForm.departureTime) return '';
@@ -637,7 +617,6 @@
           }
         };
 
-        // 🌟 新規イベント作成処理の更新
         const submitEvent = async () => {
           isCreating.value = true;
           const isNewLoc = evForm.locationSelect === 'NEW';
@@ -654,7 +633,7 @@
             data: {
               eventType: evForm.type, eventTitle: fullTitle, date: evForm.date, 
               locationName: locName, locationUrl: locUrl, isNewLocation: isNewLoc,
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, // 🌟
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc,
               departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: evForm.gInTime, startTime: evForm.startTime,
               itemsJoined: evForm.selectedItems.join('、'), newItems: [], comment: evForm.comment, notes: evForm.notes
             }
@@ -662,7 +641,6 @@
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
             alert('イベントを作成しました！');
-            // フォームリセット
             evForm.detail = ''; evForm.date = ''; 
             evForm.locationSelect = ''; evForm.newLocationName = ''; evForm.newLocationUrl = '';
             evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = '';
