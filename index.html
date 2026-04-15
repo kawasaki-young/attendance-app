@@ -41,22 +41,15 @@
       <div v-if="appState === 'dashboard'">
         
         <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
-          
-          <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定</button>
-          
-          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">家族</button>
-          
+          <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">予定</button>
+          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">家族</button>
           <template v-if="myRole === '監督'">
-            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">出欠状況</button>
-            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
+            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">出欠状況</button>
+            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">予定作成</button>
           </template>
-          
-          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車管理</button>
-          
-          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車表</button>
-
-          <button v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'share'" :class="currentTab === 'share' ? 'bg-ky-line text-white font-bold shadow-md' : 'bg-[#222222] text-ky-line border border-ky-line/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">LINE共有</button>
-
+          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">配車管理</button>
+          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">配車表</button>
+          <button v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'share'" :class="currentTab === 'share' ? 'bg-ky-line text-white font-bold shadow-md' : 'bg-[#222222] text-ky-line border border-ky-line/30'" class="flex-grow px-2 py-3 rounded-lg text-sm transition">LINE共有</button>
         </div>
 
         <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-6">
@@ -117,22 +110,27 @@
             <div class="bg-gradient-to-r from-gray-900 to-[#1a1a1a] p-4 border-b border-ky-pink/30">
               <h3 class="text-lg font-bold text-ky-white mb-2">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
               <div class="space-y-2 text-sm text-gray-300">
-                <div class="flex items-start">
-                  <span class="font-bold text-ky-pink w-16 flex-shrink-0">【出発】</span>
+                <div v-if="event.departureTime || event.gatherTime" class="flex items-start">
+                  <span class="font-bold text-ky-pink w-12 flex-shrink-0">【集合】</span>
                   <div class="flex-1">
-                    <p><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span><span v-if="event.gatherTime" class="text-xs text-gray-500 ml-1">(集合 {{ formatTime(event.gatherTime) }})</span></p>
+                    <p><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-else-if="event.gatherTime">{{ formatTime(event.gatherTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span></p>
                     <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline">出発場所MAP</a>
                   </div>
                 </div>
-                <div class="flex items-start">
-                  <span class="font-bold text-ky-pink w-16 flex-shrink-0">【予定】</span>
-                  <div class="flex-1">
-                    <p><span v-if="event.startTime">{{ formatTime(event.startTime) }}〜 </span><span v-if="event.location">@{{ event.location }}</span></p>
-                    <p v-if="event.gInTime" class="text-xs text-gray-400">(G-in {{ formatTime(event.gInTime) }})</p>
-                    <a v-if="event.mapUrl" :href="event.mapUrl" target="_blank" class="text-[10px] text-blue-400 underline">活動場所MAP</a>
+
+                <div v-if="event.schedules && event.schedules.length > 0" class="flex items-start">
+                  <span class="font-bold text-ky-pink w-12 flex-shrink-0">【予定】</span>
+                  <div class="flex-1 space-y-1">
+                    <div v-for="(s, idx) in event.schedules" :key="idx" class="leading-snug">
+                      <p>・<span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                      <a v-for="(url, i) in getUniqueUrls(event.schedules)" :key="i" :href="url" target="_blank" class="text-[10px] text-blue-400 underline border border-gray-700 px-1 rounded">📍MAP{{getUniqueUrls(event.schedules).length > 1 ? i+1 : ''}}</a>
+                    </div>
                   </div>
                 </div>
-                <div v-if="event.items" class="flex items-start"><span class="font-bold text-ky-pink w-16 flex-shrink-0">【持物】</span><div class="flex-1"><p>{{ event.items }}</p></div></div>
+
+                <div v-if="event.items" class="flex items-start"><span class="font-bold text-ky-pink w-12 flex-shrink-0">【持物】</span><div class="flex-1"><p>{{ event.items }}</p></div></div>
                 <div v-if="event.comment || event.notes" class="mt-3 p-2 bg-[#222222] rounded text-xs border border-gray-700">
                   <p v-if="event.comment" class="mb-1"><span class="text-ky-pink font-bold">監督より: </span>{{ event.comment }}</p>
                   <p v-if="event.notes"><span class="text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
@@ -249,7 +247,7 @@
 
         <div v-if="currentTab === 'create_event'" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-green-500 shadow-lg shadow-green-500/10">
-            <div class="mb-4 border-b border-gray-800 pb-2"><h2 class="text-lg font-bold text-green-400">新しい行事を作成</h2></div>
+            <div class="mb-4 border-b border-gray-800 pb-2"><h2 class="text-lg font-bold text-green-400">新しい予定を作成</h2></div>
             <form @submit.prevent="submitEvent" class="space-y-5">
               <div class="grid grid-cols-2 gap-3">
                 <div><label class="block text-[10px] font-bold text-gray-400 mb-1">種別 <span class="text-red-500">*</span></label><select v-model="evForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option></select></div>
@@ -258,32 +256,47 @@
               <div><label class="block text-[10px] font-bold text-gray-400 mb-1">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
-                <div><select v-model="evForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
-                <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
+                <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【出発/集合】情報</h4>
+                <div><select v-model="evForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし / 予定場所へ直接)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
+                <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newDepLocationName" type="text" placeholder="場所の名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newDepLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
                 <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
                 <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded"><label class="text-[10px] text-ky-pink w-1/3 font-bold">集合時間</label><div class="w-2/3 flex space-x-2"><select v-model="evForm.gatherOffset" class="w-1/2 bg-[#222222] text-white px-2 py-1 rounded border border-gray-700 outline-none text-xs"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select><input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-[#111111] text-ky-pink font-bold px-2 py-1 rounded border border-gray-700 outline-none text-xs"></div></div>
               </div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
-                <div><select v-model="evForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">選択してください</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
-                <div v-if="evForm.locationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">G-in 時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">開始時間</label><input v-model="evForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex justify-between items-center border-b border-gray-700 pb-1 mb-2">
+                  <h4 class="text-xs font-bold text-green-400">【予定】活動内容</h4>
+                  <button type="button" @click="addSchedule(evForm)" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded hover:bg-green-800">+ 追加</button>
+                </div>
+
+                <div v-for="(sched, index) in evForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
+                  <button v-if="evForm.schedules.length > 1" type="button" @click="removeSchedule(evForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
+                  <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
+                  
+                  <div class="space-y-3">
+                    <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
+                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
+                    
+                    <div class="flex items-center space-x-2">
+                      <div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                      <span class="text-gray-500 mt-4">〜</span>
+                      <div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
                 <label class="block text-[10px] font-bold text-gray-400 mb-2">【持物】 (複数選択可)</label>
                 <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-500"><span class="text-[10px] text-gray-300">{{ item }}</span></label></div>
-                <div class="flex space-x-2"><input v-model="evForm.newItem" type="text" placeholder="その他..." class="flex-1 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-xs"><button type="button" @click="addNewItem" :disabled="!evForm.newItem" class="bg-gray-700 text-white px-3 py-2 text-xs rounded disabled:opacity-50">追加</button></div>
+                <div class="flex space-x-2"><input v-model="evForm.newItem" type="text" placeholder="その他..." class="flex-1 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-xs"><button type="button" @click="addNewItem(evForm)" :disabled="!evForm.newItem" class="bg-gray-700 text-white px-3 py-2 text-xs rounded disabled:opacity-50">追加</button></div>
               </div>
               
               <div class="space-y-3">
                 <div><textarea v-model="evForm.comment" rows="2" placeholder="監督コメント" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea></div>
                 <div><textarea v-model="evForm.notes" rows="1" placeholder="全体備考" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea></div>
               </div>
-              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 text-ky-black font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50 text-sm">{{ isCreating ? '作成中...' : '行事を作成する' }}</button>
+              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 text-ky-black font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50 text-sm">{{ isCreating ? '作成中...' : '予定を作成する' }}</button>
             </form>
           </div>
         </div>
@@ -291,7 +304,7 @@
         <div v-if="isEditing" class="fixed inset-0 bg-black/90 z-[100] overflow-y-auto px-4 py-10 flex justify-center items-start">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-blue-500 shadow-2xl shadow-blue-500/20 w-full max-w-lg relative">
             <button @click="closeEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
-            <h2 class="text-lg font-bold text-blue-400 mb-4">イベント内容の修正</h2>
+            <h2 class="text-lg font-bold text-blue-400 mb-4">予定内容の修正</h2>
             <form @submit.prevent="submitEditEvent" class="space-y-5">
               <div class="grid grid-cols-2 gap-3">
                 <div><select v-model="editForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option></select></div>
@@ -300,7 +313,7 @@
               <div><input v-model="editForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【出発】情報</h4>
+                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【出発/集合】情報</h4>
                 <select v-model="editForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
                 <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-2"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div>
                 <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
@@ -308,11 +321,26 @@
               </div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【予定】活動場所・時間</h4>
-                <select v-model="editForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">選択してください</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
-                <div v-if="editForm.locationSelect === 'NEW'" class="space-y-2"><input v-model="editForm.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="editForm.newLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">G-in 時間</label><input v-model="editForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">開始時間</label><input v-model="editForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div class="flex justify-between items-center border-b border-gray-700 pb-1 mb-2">
+                  <h4 class="text-xs font-bold text-blue-400">【予定】活動内容</h4>
+                  <button type="button" @click="addSchedule(editForm)" class="text-[10px] bg-blue-900 text-blue-300 px-2 py-1 rounded hover:bg-blue-800">+ 追加</button>
+                </div>
+
+                <div v-for="(sched, index) in editForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
+                  <button v-if="editForm.schedules.length > 1" type="button" @click="removeSchedule(editForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
+                  <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
+                  
+                  <div class="space-y-3">
+                    <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
+                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
+                    
+                    <div class="flex items-center space-x-2">
+                      <div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                      <span class="text-gray-500 mt-4">〜</span>
+                      <div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
@@ -370,8 +398,6 @@
         const shareType = ref('schedule');
         const selectedShareEvents = ref([]);
         const shareAllocationEventId = ref('');
-        
-        // 🌟 修正：プレビュー文面を手動編集可能にするためのリアクティブ変数
         const customScheduleText = ref('');
         const customAllocationText = ref('');
 
@@ -384,12 +410,12 @@
         const isAllocating = ref(false);
         const dummyForm = reactive({ type: 'チームバス', capacity: '' });
 
-        const evForm = reactive({ type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherOffset: 5, gInTime: '', startTime: '', selectedItems: [], newItem: '', comment: '', notes: '' });
+        const evForm = reactive({ type: '練習', detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gatherOffset: 5, schedules: [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }], selectedItems: [], newItem: '', comment: '', notes: '' });
         const isCreating = ref(false);
 
         const isEditing = ref(false);
         const isSavingEdit = ref(false);
-        const editForm = reactive({ eventId: '', type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gInTime: '', startTime: '', selectedItems: [], comment: '', notes: '' });
+        const editForm = reactive({ eventId: '', type: '練習', detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
@@ -422,24 +448,39 @@
         const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
         const getCarStatus = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.carStatus : null; };
 
-        // 🌟 自動生成されるテキスト（ベース用）
+        const getUniqueUrls = (schedules) => {
+          if(!schedules) return [];
+          const urls = schedules.map(s => s.mapUrl).filter(u => u);
+          return [...new Set(urls)];
+        };
+
         const generatedScheduleText = computed(() => {
           if (selectedShareEvents.value.length === 0) return '';
           let text = '週末の予定をお知らせします。\n\n';
           const targetEvents = sortedEvents.value.filter(e => selectedShareEvents.value.includes(e.id));
+          
           targetEvents.forEach(e => {
             text += `◆${formatDate(e.date)} ${e.title}\n`;
-            if (e.departureTime || e.depLocation) {
+            if (e.departureTime || e.gatherTime) {
               const depLoc = e.depLocation ? `@${e.depLocation}` : '';
-              const gather = e.gatherTime ? `(集合 ${formatTime(e.gatherTime)})` : '';
-              text += `【出発】${formatTime(e.departureTime)}${depLoc} ${gather}\n`;
+              const depTime = e.departureTime ? `${formatTime(e.departureTime)}出発` : '';
+              const gather = e.gatherTime ? `集合${formatTime(e.gatherTime)}` : '';
+              const slash = (depTime && gather) ? ' / ' : '';
+              text += `【集合】${depTime}${slash}${gather}${depLoc}\n`;
               if (e.depMapUrl) text += `📍出発MAP: ${e.depMapUrl}\n`;
             }
-            const start = e.startTime ? `${formatTime(e.startTime)}〜 ` : '';
-            const loc = e.location ? `@${e.location}` : '';
-            const gin = e.gInTime ? `(G-in ${formatTime(e.gInTime)})` : '';
-            text += `【予定】${start}${loc} ${gin}\n`;
-            if (e.mapUrl) text += `📍活動MAP: ${e.mapUrl}\n`;
+            
+            if (e.schedules && e.schedules.length > 0) {
+              text += `【予定】\n`;
+              e.schedules.forEach(s => {
+                const timeStr = s.endTime ? `${formatTime(s.startTime)}〜${formatTime(s.endTime)}` : (s.startTime ? `${formatTime(s.startTime)}〜` : '');
+                const locStr = s.location ? `@${s.location}` : '';
+                text += `・${timeStr}${locStr}\n`;
+              });
+              const uniqueUrls = getUniqueUrls(e.schedules);
+              uniqueUrls.forEach((url, i) => { text += `📍MAP${uniqueUrls.length > 1 ? i+1 : ''}: ${url}\n`; });
+            }
+            
             if (e.items) text += `【持物】${e.items}\n`;
             if (e.comment) text += `【監督より】${e.comment}\n`;
             if (e.notes) text += `【備考】${e.notes}\n`;
@@ -449,7 +490,6 @@
           return text;
         });
 
-        // 🌟 自動生成テキストが変わった時、編集用ボックスにコピーする
         watch(generatedScheduleText, (newVal) => { customScheduleText.value = newVal; });
 
         const getPassengersInCar = (carId, evtId) => attendanceRecords.value.filter(r => r.eventId === evtId && r.assignTo === carId);
@@ -474,13 +514,11 @@
           return text;
         });
 
-        // 🌟 自動生成テキストが変わった時、編集用ボックスにコピーする
         watch(generatedAllocationText, (newVal) => { customAllocationText.value = newVal; });
 
-        // 🌟 LINEへ共有する関数
         const shareToLine = async (textToShare) => {
           if (!liff.isApiAvailable('shareTargetPicker')) {
-            alert('【エラー】LINE共有機能は「外部ブラウザ(Safari/Chrome等)」では動作しません。\n必ずLINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
+            alert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
           }
           try {
             const res = await liff.shareTargetPicker([{ type: 'text', text: textToShare }]);
@@ -512,14 +550,24 @@
         const formatTimeForInput = (timeStr) => {
           if(!timeStr) return ''; try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } catch(e){} return timeStr.substring(0,5);
         };
+        
         const openEditModal = (ev) => {
           const match = ev.title.match(/\((.*?)\)$/);
           editForm.eventId = ev.id; editForm.type = ev.type || '練習'; editForm.detail = match ? match[1] : '';
           const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
-          editForm.locationSelect = ev.location || ''; editForm.newLocationName = ''; editForm.newLocationUrl = '';
+          
           editForm.depLocationSelect = ev.depLocation || ''; editForm.newDepLocationName = ''; editForm.newDepLocationUrl = '';
           editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
-          editForm.gInTime = formatTimeForInput(ev.gInTime); editForm.startTime = formatTimeForInput(ev.startTime);
+          
+          if(ev.schedules && ev.schedules.length > 0) {
+            editForm.schedules = ev.schedules.map(s => ({
+              startTime: formatTimeForInput(s.startTime), endTime: formatTimeForInput(s.endTime),
+              locationSelect: s.location || '', newLocationName: '', newLocationUrl: ''
+            }));
+          } else {
+            editForm.schedules = [{ startTime: formatTimeForInput(ev.startTime), endTime: '', locationSelect: ev.location || '', newLocationName: '', newLocationUrl: '' }];
+          }
+          
           editForm.selectedItems = ev.items ? ev.items.split('、') : []; editForm.comment = ev.comment || ''; editForm.notes = ev.notes || '';
           isEditing.value = true;
         };
@@ -528,16 +576,30 @@
         const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
         const getDepLocUrl = (name) => { const dep = departureMaster.value.find(d => d.name === name); return dep ? dep.url : ''; };
         
+        const addSchedule = (targetForm) => { targetForm.schedules.push({ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }); };
+        const removeSchedule = (targetForm, index) => { targetForm.schedules.splice(index, 1); };
+
+        const formatSchedulesForGAS = (schedulesArray) => {
+          return schedulesArray.map(s => {
+            const isNew = s.locationSelect === 'NEW';
+            const locName = isNew ? s.newLocationName : s.locationSelect;
+            const locUrl = isNew ? s.newLocationUrl : getLocUrl(s.locationSelect);
+            return { startTime: s.startTime, endTime: s.endTime, location: locName, mapUrl: locUrl, isNewLocation: isNew };
+          });
+        };
+
         const submitEditEvent = async () => {
           isSavingEdit.value = true;
-          const isNewLoc = editForm.locationSelect === 'NEW'; const locName = isNewLoc ? editForm.newLocationName : editForm.locationSelect; const locUrl = isNewLoc ? editForm.newLocationUrl : getLocUrl(editForm.locationSelect);
           const isNewDepLoc = editForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? editForm.newDepLocationName : editForm.depLocationSelect; const depLocUrl = isNewDepLoc ? editForm.newDepLocationUrl : getDepLocUrl(editForm.depLocationSelect);
-          const fullTitle = `${editForm.type}@${locName}` + (editForm.detail ? ` (${editForm.detail})` : '');
+          const finalSchedules = formatSchedulesForGAS(editForm.schedules);
+          const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
+          const fullTitle = `${editForm.type}@${primaryLoc}` + (editForm.detail ? ` (${editForm.detail})` : '');
+          
           const payload = {
             action: 'updateEvent', data: {
-              eventId: editForm.eventId, eventType: editForm.type, eventTitle: fullTitle, date: editForm.date, locationName: locName, locationUrl: locUrl, isNewLocation: isNewLoc,
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime, gInTime: editForm.gInTime, startTime: editForm.startTime,
-              itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
+              eventId: editForm.eventId, eventType: editForm.type, eventTitle: fullTitle, date: editForm.date,
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
+              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
           };
           try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); alert('修正を保存しました'); closeEditModal(); await fetchDashboardData(); } catch (e) { alert('通信エラー'); } finally { isSavingEdit.value = false; }
@@ -576,22 +638,27 @@
         const computedGatherTime = computed(() => {
           if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         });
-        const addNewItem = () => { if (evForm.newItem && !itemMaster.value.includes(evForm.newItem)) { itemMaster.value.push(evForm.newItem); evForm.selectedItems.push(evForm.newItem); evForm.newItem = ''; } };
+        const addNewItem = (targetForm) => { if (targetForm.newItem && !itemMaster.value.includes(targetForm.newItem)) { itemMaster.value.push(targetForm.newItem); targetForm.selectedItems.push(targetForm.newItem); targetForm.newItem = ''; } };
+        
         const submitEvent = async () => {
           isCreating.value = true;
-          const isNewLoc = evForm.locationSelect === 'NEW'; const locName = isNewLoc ? evForm.newLocationName : evForm.locationSelect; const locUrl = isNewLoc ? evForm.newLocationUrl : getLocUrl(evForm.locationSelect);
           const isNewDepLoc = evForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? evForm.newDepLocationName : evForm.depLocationSelect; const depLocUrl = isNewDepLoc ? evForm.newDepLocationUrl : getDepLocUrl(evForm.depLocationSelect);
-          const fullTitle = `${evForm.type}@${locName}` + (evForm.detail ? ` (${evForm.detail})` : '');
+          const finalSchedules = formatSchedulesForGAS(evForm.schedules);
+          const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
+          const fullTitle = `${evForm.type}@${primaryLoc}` + (evForm.detail ? ` (${evForm.detail})` : '');
+          
           const payload = {
             action: 'createEvent', data: {
-              eventType: evForm.type, eventTitle: fullTitle, date: evForm.date, locationName: locName, locationUrl: locUrl, isNewLocation: isNewLoc,
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: evForm.gInTime, startTime: evForm.startTime,
-              itemsJoined: evForm.selectedItems.join('、'), newItems: [], comment: evForm.comment, notes: evForm.notes
+              eventType: evForm.type, eventTitle: fullTitle, date: evForm.date, 
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
+              schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
             }
           };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); alert('イベントを作成しました！');
-            evForm.detail = ''; evForm.date = ''; evForm.locationSelect = ''; evForm.newLocationName = ''; evForm.newLocationUrl = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; evForm.gInTime = ''; evForm.startTime = ''; evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
+            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
+            evForm.schedules = [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
+            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
             currentTab.value = 'events'; await fetchDashboardData();
           } catch (e) { alert('通信エラー'); } finally { isCreating.value = false; }
         };
@@ -605,13 +672,13 @@
           appState, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating, newMember, isSaving, isSubmittingEvent,
-          initLiff, formatDate, formatTime, getUserRole,
+          initLiff, formatDate, formatTime, getUserRole, getUniqueUrls,
           getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, addFamilyMember,
           directorStats, directorLists, dummyForm, addDummyVehicle,
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
-          isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent,
+          isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine
         };
       }
