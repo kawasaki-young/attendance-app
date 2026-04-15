@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>川崎ヤング 出欠・配車管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ky: { black: '#000000', white: '#FFFFFF', pink: '#FF5FE3' } } } } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.prod.js"></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    [v-cloak] { display: none !important; }
+    body { background-color: #000000; color: #FFFFFF; -webkit-tap-highlight-color: transparent; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+  </style>
+</head>
+<body class="bg-ky-black text-ky-white font-sans antialiased">
+  <div id="app" v-cloak>
+    <header class="bg-ky-black p-4 sticky top-0 z-50 border-b border-ky-pink shadow-[0_4px_15px_rgba(255,95,227,0.1)]">
+      <h1 class="text-lg font-bold flex items-center tracking-wider text-ky-white">
+        <span class="mr-2 text-ky-pink">⚾️</span> 川崎ヤング 管理システム
+      </h1>
+    </header>
+
+    <main class="container mx-auto px-4 py-6 pb-24">
+      
+      <div v-if="appState === 'error'" class="bg-red-900 border border-red-500 rounded-xl p-6 text-white mb-6">
+        <h2 class="font-bold text-lg mb-2">⚠️ システムエラー</h2>
+        <p class="text-sm">{{ errorMessage }}</p>
+        <button @click="initLiff" class="mt-4 bg-white text-red-900 px-4 py-2 rounded font-bold text-sm">再読み込み</button>
+      </div>
+
+      <div v-if="appState === 'loading'" class="flex flex-col items-center justify-center h-64">
+        <div class="animate-spin h-10 w-10 border-4 border-ky-pink rounded-full border-t-transparent"></div>
+        <p class="mt-4 text-gray-400 font-medium">{{ loadingMessage }}</p>
+      </div>
+
+      <div v-if="appState === 'dashboard'">
+        
+        <div class="flex mb-6 bg-[#1a1a1a] p-1 rounded-xl overflow-x-auto whitespace-nowrap no-scrollbar space-x-1">
+          <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold' : 'text-gray-400'" class="px-4 py-2 rounded-lg text-sm transition">📅 出欠</button>
+          <button @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold' : 'text-gray-400'" class="px-4 py-2 rounded-lg text-sm transition">👥 家族</button>
+          
+          <template v-if="myRole === '監督'">
+            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold' : 'text-ky-pink border border-ky-pink/30'" class="px-4 py-2 rounded-lg text-sm transition">📋 状況</button>
+            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold' : 'text-green-500 border border-green-500/30'" class="px-4 py-2 rounded-lg text-sm transition">➕ 行事作成</button>
+          </template>
+          
+          <button v-if="myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold' : 'text-ky-pink border border-ky-pink/30'" class="px-4 py-2 rounded-lg text-sm transition">🚗 配車管理</button>
+          <button @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold' : 'text-gray-400'" class="px-4 py-2 rounded-lg text-sm transition">🚙 配車表</button>
+        </div>
+
+        <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-6">
+          <label class="block text-sm font-bold text-ky-pink mb-2">確認するイベントを選択</label>
+          <select v-model="globalEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-ky-pink outline-none">
+            <option disabled value="">イベントを選択してください</option>
+            <option v-for="event in events" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
+          </select>
+        </div>
+
+        <div v-if="currentTab === 'events'" class="space-y-6">
+          <div v-if="events.length === 0" class="text-center py-10 text-gray-500">現在登録されているイベントはありません。</div>
+          <div v-for="event in events" :key="event.id" class="bg-[#111111] rounded-xl border border-gray-800 overflow-hidden shadow-lg">
+            <div class="bg-gradient-to-r from-gray-900 to-[#1a1a1a] p-4 border-b border-ky-pink/30">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="bg-gray-800 text-ky-pink text-[10px] px-2 py-1 rounded mb-1 inline-block">{{ event.type || 'イベント' }}</span>
+                  <p class="text-gray-400 text-xs font-bold mb-1">{{ formatDate(event.date) }} | {{ event.location }}</p>
+                  <h3 class="text-lg font-bold">{{ event.title }}</h3>
+                </div>
+                <a v-if="event.mapUrl" :href="event.mapUrl" target="_blank" class="text-xs bg-[#222222] border border-gray-700 px-3 py-2 rounded text-blue-400 hover:bg-gray-800">🗺️ MAP</a>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-3 text-xs text-gray-400">
+                <div v-if="event.departureTime">出発: <span class="text-white">{{ formatTime(event.departureTime) }}</span></div>
+                <div v-if="event.gatherTime">集合: <span class="text-white font-bold">{{ formatTime(event.gatherTime) }}</span></div>
+                <div v-if="event.gInTime">G-in: <span class="text-white">{{ formatTime(event.gInTime) }}</span></div>
+                <div v-if="event.startTime">開始: <span class="text-white">{{ formatTime(event.startTime) }}</span></div>
+              </div>
+              <div v-if="event.items" class="mt-2 text-xs text-gray-400 border-t border-gray-800 pt-2">
+                <span class="font-bold text-ky-pink">持ち物:</span> {{ event.items }}
+              </div>
+              <div v-if="event.comment" class="mt-2 text-xs bg-[#1a1a1a] p-2 rounded text-gray-300">
+                <span class="font-bold text-ky-pink block mb-1">監督より:</span>{{ event.comment }}
+              </div>
+            </div>
+            <div class="p-4 space-y-4">
+              <div v-for="member in familyMembers" :key="member.id" class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
+                <p class="font-bold text-sm mb-2"><span class="w-2 h-2 inline-block rounded-full bg-ky-pink mr-2"></span>{{ member.name }} <span class="text-xs text-gray-500">({{ member.role }})</span></p>
+                <div class="flex space-x-2 mb-3">
+                  <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">参加</button>
+                  <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">未定</button>
+                  <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">不参加</button>
+                </div>
+                <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="flex items-center justify-between border-t border-gray-700 pt-2 mt-2">
+                  <span class="text-xs text-gray-400">車出し可能ですか？</span>
+                  <div class="flex space-x-2">
+                    <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">可</button>
+                    <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">不可</button>
+                  </div>
+                </div>
+              </div>
+              <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id"
+                class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center">
+                <span v-if="isSubmittingEvent === event.id" class="animate-spin h-4 w-4 border-2 border-ky-black rounded-full border-t-transparent mr-2"></span>
+                {{ isSubmittingEvent === event.id ? '送信中...' : 'このイベントの出欠を確定・送信する' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'family'" class="space-y-6">
+          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
+            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">あなたの家族構成</h3>
+            <ul class="space-y-3 mb-6">
+              <li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800">
+                <span class="font-medium">{{ member.name }}</span><span class="text-xs px-2 py-1 bg-gray-800 rounded text-gray-400">{{ member.role }}</span>
+              </li>
+            </ul>
+            <h4 class="font-bold text-sm text-gray-300 mb-3 mt-6">＋ 新しい家族（選手）を追加</h4>
+            <form @submit.prevent="addFamilyMember" class="space-y-3">
+              <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none">
+              <div class="flex space-x-2">
+                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer" :class="newMember.role === '選手' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
+                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer" :class="newMember.role === '家族' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
+              </div>
+              <button type="submit" :disabled="isSaving" class="w-full mt-2 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-lg border border-gray-600">追加する</button>
+            </form>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'director' && globalEventId" class="space-y-6">
+          <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
+            <div class="bg-[#1a1a1a] p-4 rounded-lg border border-gray-800 mb-6">
+              <p class="text-sm font-bold text-gray-300 mb-3">＋ チームバス・監督車の手配</p>
+              <div class="flex space-x-2">
+                <select v-model="dummyForm.type" class="flex-1 bg-[#222222] text-sm text-white px-3 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink">
+                  <option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option>
+                </select>
+                <input v-model="dummyForm.capacity" type="number" placeholder="定員(人)" class="w-24 bg-[#222222] text-sm text-white px-3 py-2 rounded border border-gray-700 outline-none focus:ring-1 focus:ring-ky-pink">
+                <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-pink text-ky-black px-4 py-2 text-sm font-bold rounded disabled:opacity-50">追加</button>
+              </div>
+            </div>
+            <div class="mb-6">
+              <h3 class="text-sm font-bold text-ky-pink mb-3 border-b border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">選手</p><p class="text-2xl font-bold text-white">{{ directorStats.players }}<span class="text-xs font-normal">名</span></p></div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">大人</p><p class="text-2xl font-bold text-white">{{ directorStats.parents }}<span class="text-xs font-normal">名</span></p></div>
+                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-xs text-gray-400">他</p><p class="text-2xl font-bold text-white">{{ directorStats.family }}<span class="text-xs font-normal">名</span></p></div>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <h4 class="text-xs font-bold text-gray-400 mb-2">参加選手</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span v-for="p in directorLists.players" :key="p.id" class="bg-gray-800 text-gray-200 text-xs px-2 py-1 rounded">{{ p.name }}</span>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-gray-400 mb-2">参加大人（審判・ウグイス等）</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-700 text-gray-300 text-xs px-2 py-1 rounded">{{ p.name }} <span class="text-[10px] text-ky-pink">{{ p.role }}</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'allocation' && globalEventId" class="space-y-6">
+          <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
+            <label class="block text-sm font-bold text-ky-pink mb-2">乗車待ちのメンバー（未配車）</label>
+            <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 h-40 overflow-y-auto mb-4 space-y-2">
+              <p v-if="unassignedPassengers.length === 0" class="text-xs text-gray-500 text-center mt-4">全員の配車が完了しています！</p>
+              <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
+                <input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-pink w-4 h-4">
+                <span class="text-sm flex-1">{{ passenger.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(passenger.userId) }})</span></span>
+              </label>
+            </div>
+            <label class="block text-sm font-bold text-ky-pink mb-2">どの車両に乗せますか？</label>
+            <select v-model="targetVehicleId" class="w-full px-4 py-3 mb-4 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none">
+              <option disabled value="">車両を選択してください</option>
+              <option v-for="car in availableCars" :key="car.userId" :value="car.userId">{{ getVehicleDisplayName(car) }}</option>
+            </select>
+            <button @click="executeAllocation" :disabled="selectedPassengers.length === 0 || !targetVehicleId || isAllocating" class="w-full bg-ky-pink text-ky-black font-extrabold py-3 rounded-lg shadow-md transition disabled:opacity-50">{{ isAllocating ? '保存中...' : '割り当てる' }}</button>
+          </div>
+          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
+            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">車両別 配車状況</h3>
+            <div class="space-y-4">
+              <div v-for="car in availableCars" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden">
+                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-sm">{{ getVehicleDisplayName(car) }}</span></div>
+                <ul class="p-2 space-y-1">
+                  <li v-for="p in getPassengersInCar(car.userId)" :key="p.userId" class="flex justify-between items-center text-sm px-2 py-1 rounded hover:bg-gray-800">
+                    <span>{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></span>
+                    <button @click="unassign(p.userId)" class="text-[10px] text-red-400 border border-red-900 px-2 py-1 rounded hover:bg-red-900 transition">解除</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'view_allocation' && globalEventId" class="space-y-6">
+          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
+            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">配車表</h3>
+            <div class="space-y-4 mb-6">
+              <div v-for="car in availableCars" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden">
+                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-sm">{{ getVehicleDisplayName(car) }}</span></div>
+                <ul class="p-2 space-y-1 text-sm">
+                  <li v-for="p in getPassengersInCar(car.userId)" :key="p.userId" class="px-2 py-1">{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></li>
+                </ul>
+              </div>
+            </div>
+            <h3 class="font-bold text-yellow-500 mb-3 border-b border-gray-800 pb-2 text-sm">配車待ち（未定）</h3>
+            <div class="flex flex-wrap gap-2">
+              <span v-for="p in unassignedPassengers" :key="p.userId" class="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded">{{ p.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'create_event'" class="space-y-6">
+          <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-green-500 shadow-lg shadow-green-500/10">
+            <div class="mb-4 border-b border-gray-800 pb-2">
+              <h2 class="text-lg font-bold text-green-400">➕ 新しい行事を作成</h2>
+              <p class="text-xs text-gray-400">作成と同時にチーム全体に公開されます。</p>
+            </div>
+
+            <form @submit.prevent="submitEvent" class="space-y-5">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-gray-400 mb-1">イベント種別 <span class="text-red-500">*</span></label>
+                  <select v-model="evForm.type" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+                    <option value="練習">練習</option><option value="OP戦">OP戦</option><option value="公式戦">公式戦</option><option value="合宿">合宿</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-400 mb-1">日付 <span class="text-red-500">*</span></label>
+                  <input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1">大会名・補足 (任意)</label>
+                <input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+              </div>
+
+              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
+                <label class="block text-xs font-bold text-gray-400 mb-2">場所 <span class="text-red-500">*</span></label>
+                <select v-model="evForm.locationSelect" required class="w-full bg-[#222222] text-white px-3 py-2 mb-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+                  <option disabled value="">選択してください</option>
+                  <option value="NEW">＋ 新しい場所を登録する</option>
+                  <option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option>
+                </select>
+                
+                <div v-if="evForm.locationSelect === 'NEW'" class="mt-2 space-y-2 border-t border-gray-700 pt-2">
+                  <input v-model="evForm.newLocationName" type="text" placeholder="新しい場所の名前" required class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+                  <input v-model="evForm.newLocationUrl" type="url" placeholder="Google MapのURL (任意)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 focus:ring-1 focus:ring-green-500 outline-none text-sm">
+                </div>
+                <div v-else-if="evForm.locationSelect" class="text-xs text-gray-500 truncate">
+                  📍 登録済URL: {{ getLocUrl(evForm.locationSelect) || 'なし' }}
+                </div>
+              </div>
+
+              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
+                <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">タイムスケジュール</h4>
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-gray-300 w-1/3">出発時間</label>
+                  <input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
+                </div>
+                <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded">
+                  <label class="text-xs text-ky-pink w-1/3 font-bold">集合時間 (自動)</label>
+                  <div class="w-2/3 flex space-x-2">
+                    <select v-model="evForm.gatherOffset" class="w-1/2 bg-[#222222] text-white px-2 py-1 rounded border border-gray-700 outline-none text-xs">
+                      <option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option>
+                    </select>
+                    <input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-[#111111] text-ky-pink font-bold px-2 py-1 rounded border border-gray-700 outline-none text-xs">
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-gray-300 w-1/3">G-in 時間</label>
+                  <input v-model="evForm.gInTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-xs text-gray-300 w-1/3">開始時間</label>
+                  <input v-model="evForm.startTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
+                </div>
+              </div>
+
+              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
+                <label class="block text-xs font-bold text-gray-400 mb-2">持ち物 (複数選択可)</label>
+                <div class="flex flex-wrap gap-2 mb-3">
+                  <label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer hover:border-green-500">
+                    <input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-500">
+                    <span class="text-xs text-gray-300">{{ item }}</span>
+                  </label>
+                </div>
+                <div class="flex space-x-2">
+                  <input v-model="evForm.newItem" type="text" placeholder="その他追加する持ち物..." class="flex-1 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-xs">
+                  <button type="button" @click="addNewItem" :disabled="!evForm.newItem" class="bg-gray-700 text-white px-3 py-2 text-xs rounded hover:bg-gray-600 disabled:opacity-50">リストに追加</button>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-gray-400 mb-1">監督コメント (注意事項等)</label>
+                  <textarea v-model="evForm.comment" rows="2" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-400 mb-1">全体備考</label>
+                  <textarea v-model="evForm.notes" rows="1" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
+                </div>
+              </div>
+
+              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 hover:bg-green-400 text-ky-black font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50">
+                {{ isCreating ? 'イベント作成中...' : 'この内容でイベントを作成する' }}
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, reactive, computed } = Vue;
+
+    createApp({
+      setup() {
+        // ⚠️ ここをご自身のIDに書き換えてください
+        const LIFF_ID = "2009768140-ewTNX7NS"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxrdtozOTr3Iqul8l_aT6kSOPKWgJBBQb1WE8ozCeEOwdAWSqedvkEmwMfdBgJxKF4x/exec";
+
+        const appState = ref('loading'); 
+        const loadingMessage = ref('データ読み込み中...');
+        const errorMessage = ref('');
+        const profile = ref(null);
+        
+        const currentTab = ref('events'); 
+        const globalEventId = ref(''); 
+        
+        const myFamilyId = ref('');
+        const myRole = ref('');
+        const myPermission = ref('');
+        
+        const allUsers = ref([]); 
+        const familyMembers = ref([]);
+        const events = ref([]);
+        const attendanceRecords = ref([]); 
+        
+        const locationMaster = ref([]);
+        const itemMaster = ref([]);
+
+        const newMember = reactive({ name: '', role: '選手' });
+        const isSaving = ref(false);
+        const isSubmittingEvent = ref('');
+
+        const selectedPassengers = ref([]);
+        const targetVehicleId = ref('');
+        const isAllocating = ref(false);
+        const dummyForm = reactive({ type: 'チームバス', capacity: '' });
+
+        const evForm = reactive({
+          type: '練習', detail: '', date: '', locationSelect: '',
+          newLocationName: '', newLocationUrl: '',
+          departureTime: '', gatherOffset: 5, gInTime: '', startTime: '',
+          selectedItems: [], newItem: '', comment: '', notes: ''
+        });
+        const isCreating = ref(false);
+
+        const handleError = (msg, error) => {
+          console.error(error);
+          errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : '不明なエラー'}`;
+          appState.value = 'error';
+        };
+
+        const initLiff = async () => {
+          appState.value = 'loading';
+          try {
+            await liff.init({ liffId: LIFF_ID });
+            if (liff.isLoggedIn()) {
+              profile.value = await liff.getProfile();
+              await fetchDashboardData();
+            } else { liff.login(); }
+          } catch (error) { handleError('初期化エラー', error); }
+        };
+
+        const fetchDashboardData = async () => {
+          try {
+            const res = await fetch(`${GAS_URL}?action=getDashboardData&lineId=${profile.value.userId}`);
+            const data = await res.json();
+            if (data.status === 'success') {
+              familyMembers.value = data.familyMembers;
+              events.value = data.events;
+              attendanceRecords.value = data.attendance;
+              myFamilyId.value = data.myFamilyId;
+              allUsers.value = data.allUsers;
+              myRole.value = data.myRole;
+              myPermission.value = data.myPermission;
+              locationMaster.value = data.locations || [];
+              itemMaster.value = data.items || [];
+              appState.value = 'dashboard';
+            } else {
+              handleError('データ取得エラー', data);
+            }
+          } catch (error) { handleError('通信エラー', error); }
+        };
+
+        // --- 出欠・共通ロジック ---
+        const getUserRole = (userId) => { const u = allUsers.value.find(u => u.id === userId); return u ? u.role : '不明'; };
+        const getRecord = (eventId, userId) => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === userId);
+        const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
+        const getCarStatus = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.carStatus : null; };
+
+        const setLocalAttendance = (eventId, member, status) => {
+          let rec = getRecord(eventId, member.id);
+          if (rec) rec.status = status;
+          else attendanceRecords.value.push({ eventId, userId: member.id, name: member.name, status, carStatus: '' });
+        };
+        const setLocalCarStatus = (eventId, member, carStatus) => {
+          let rec = getRecord(eventId, member.id);
+          if (rec) rec.carStatus = carStatus;
+        };
+
+        const submitEventAttendance = async (eventId) => {
+          isSubmittingEvent.value = eventId;
+          const recordsToSave = familyMembers.value.map(member => {
+            const rec = getRecord(eventId, member.id);
+            return rec ? rec : { eventId, userId: member.id, name: member.name, status: '未定', carStatus: '' };
+          });
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) });
+            alert('出欠データを確定しました！');
+          } catch (e) { alert('通信エラー'); } 
+          finally { isSubmittingEvent.value = ''; }
+        };
+
+        const addFamilyMember = async () => {
+          if (!newMember.name) return;
+          isSaving.value = true;
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) });
+            alert('追加しました！');
+            newMember.name = '';
+            await fetchDashboardData();
+          } catch (e) { alert('エラー'); } 
+          finally { isSaving.value = false; }
+        };
+
+        // --- 監督用サマリー ---
+        const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
+        const directorStats = computed(() => {
+          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
+          const players = participants.filter(p => getUserRole(p.userId) === '選手').length;
+          const parents = participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督').length;
+          const family = participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB').length;
+          return { total: participants.length, players, parents, family };
+        });
+        const directorLists = computed(() => {
+          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
+          return {
+            players: participants.filter(p => getUserRole(p.userId) === '選手'),
+            adults: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督' || getUserRole(p.userId) === 'OB').map(p => ({...p, role: getUserRole(p.userId)}))
+          };
+        });
+
+        // --- 配車管理 ---
+        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.isDummy));
+        const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && !r.assignTo));
+        const getPassengersInCar = (carId) => currentEventAttendance.value.filter(r => r.assignTo === carId);
+
+        const getVehicleDisplayName = (car) => {
+          let cap = 0; let name = '';
+          if (car.isDummy) { name = car.name; cap = Number(car.capacity) || 0; } 
+          else {
+            const user = allUsers.value.find(u => u.id === car.userId);
+            name = user && user.vehicleName ? user.vehicleName : `${car.name}の車`;
+            cap = user ? Number(user.vehicleCapacity) || 0 : 0;
+          }
+          const assignedCount = getPassengersInCar(car.userId).length;
+          return `${name} (定員${cap} / 残り${cap - assignedCount}席)`;
+        };
+
+        const addDummyVehicle = async () => {
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) });
+            dummyForm.capacity = ''; 
+            await fetchDashboardData(); 
+          } catch (e) { alert('通信エラー'); }
+        };
+
+        const executeAllocation = async () => {
+          isAllocating.value = true;
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveAllocation', data: { eventId: globalEventId.value, assignments: selectedPassengers.value, targetVehicleId: targetVehicleId.value } }) });
+            selectedPassengers.value = []; 
+            await fetchDashboardData(); 
+          } catch (e) { alert('通信エラー'); }
+          finally { isAllocating.value = false; }
+        };
+
+        const unassign = async (userId) => {
+          if(!confirm('配車を解除しますか？')) return;
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) });
+            await fetchDashboardData(); 
+          } catch (e) { alert('通信エラー'); }
+        };
+
+        // --- 行事作成 ---
+        const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
+        const computedGatherTime = computed(() => {
+          if (!evForm.departureTime) return '';
+          const [h, m] = evForm.departureTime.split(':').map(Number);
+          const d = new Date(2000, 0, 1, h, m);
+          d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset));
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        });
+        const addNewItem = () => {
+          if (evForm.newItem && !itemMaster.value.includes(evForm.newItem)) {
+            itemMaster.value.push(evForm.newItem);
+            evForm.selectedItems.push(evForm.newItem);
+            evForm.newItem = '';
+          }
+        };
+
+        const submitEvent = async () => {
+          isCreating.value = true;
+          const isNewLoc = evForm.locationSelect === 'NEW';
+          const locName = isNewLoc ? evForm.newLocationName : evForm.locationSelect;
+          const locUrl = isNewLoc ? evForm.newLocationUrl : getLocUrl(evForm.locationSelect);
+          const fullTitle = `${evForm.type}@${locName}` + (evForm.detail ? ` (${evForm.detail})` : '');
+
+          const payload = {
+            action: 'createEvent',
+            data: {
+              eventType: evForm.type, eventTitle: fullTitle, date: evForm.date,
+              locationName: locName, locationUrl: locUrl, isNewLocation: isNewLoc,
+              departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: evForm.gInTime, startTime: evForm.startTime,
+              itemsJoined: evForm.selectedItems.join('、'), newItems: [], // 簡略化のため空配列。GAS側で次回以降反映されます。
+              comment: evForm.comment, notes: evForm.notes
+            }
+          };
+
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+            alert('イベントを作成しました！');
+            evForm.detail = ''; evForm.date = ''; evForm.locationSelect = ''; evForm.newLocationName = ''; evForm.newLocationUrl = '';
+            evForm.departureTime = ''; evForm.gInTime = ''; evForm.startTime = ''; evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
+            currentTab.value = 'events';
+            await fetchDashboardData();
+          } catch (e) { alert('通信エラー'); }
+          finally { isCreating.value = false; }
+        };
+
+        const formatDate = (dateStr) => {
+          if(!dateStr) return '';
+          const d = new Date(dateStr);
+          return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`;
+        };
+
+        // GASから返ってくる時刻データを見やすくフォーマット
+        const formatTime = (timeStr) => {
+          if(!timeStr) return '';
+          if (/^\d{1,2}:\d{2}/.test(timeStr)) return timeStr.substring(0, 5); // 既にHH:MM形式の場合
+          try {
+            const d = new Date(timeStr);
+            if(!isNaN(d)) return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          } catch (e) {}
+          return timeStr;
+        };
+
+        onMounted(() => { initLiff(); });
+
+        return {
+          appState, loadingMessage, errorMessage, profile, currentTab, globalEventId,
+          myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
+          locationMaster, itemMaster, evForm, isCreating, newMember, isSaving, isSubmittingEvent,
+          
+          initLiff, formatDate, formatTime, getUserRole,
+          getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, addFamilyMember,
+          
+          directorStats, directorLists, dummyForm, addDummyVehicle,
+          unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
+          getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
+          
+          getLocUrl, computedGatherTime, addNewItem, submitEvent
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
