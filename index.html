@@ -16,7 +16,6 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-    /* モーダル表示時の背景固定用 */
     body.modal-open { overflow: hidden; }
   </style>
 </head>
@@ -85,21 +84,23 @@
             </div>
             
             <div class="p-4 space-y-4">
-              <div v-for="member in familyMembers" :key="member.id" class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                <p class="font-bold text-sm mb-2"><span class="w-2 h-2 inline-block rounded-full bg-ky-pink mr-2"></span>{{ member.name }} <span class="text-xs text-gray-500">({{ member.role }})</span></p>
-                <div class="flex space-x-2 mb-3">
-                  <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">参加</button>
-                  <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">未定</button>
-                  <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">不参加</button>
-                </div>
-                <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="flex items-center justify-between border-t border-gray-700 pt-2 mt-2">
-                  <span class="text-xs text-gray-400">車出し可能ですか？</span>
-                  <div class="flex space-x-2">
-                    <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">可</button>
-                    <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">不可</button>
+              <template v-if="myRole !== '監督'">
+                <div v-for="member in familyMembers" :key="member.id" class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
+                  <p class="font-bold text-sm mb-2"><span class="w-2 h-2 inline-block rounded-full bg-ky-pink mr-2"></span>{{ member.name }} <span class="text-xs text-gray-500">({{ member.role }})</span></p>
+                  <div class="flex space-x-2 mb-3">
+                    <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">参加</button>
+                    <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">未定</button>
+                    <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">不参加</button>
+                  </div>
+                  <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="flex items-center justify-between border-t border-gray-700 pt-2 mt-2">
+                    <span class="text-xs text-gray-400">車出し可能ですか？</span>
+                    <div class="flex space-x-2">
+                      <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">可</button>
+                      <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">不可</button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
               
               <button v-if="myRole === '監督'" @click="openEditModal(event)" class="w-full mt-4 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition hover:bg-blue-500 flex justify-center items-center">
                 📝 イベント内容を修正する
@@ -396,7 +397,6 @@
         const evForm = reactive({ type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', departureTime: '', gatherOffset: 5, gInTime: '', startTime: '', selectedItems: [], newItem: '', comment: '', notes: '' });
         const isCreating = ref(false);
 
-        // 🌟 イベント修正用ステート
         const isEditing = ref(false);
         const isSavingEdit = ref(false);
         const editForm = reactive({ eventId: '', type: '練習', detail: '', date: '', locationSelect: '', newLocationName: '', newLocationUrl: '', departureTime: '', gatherTime: '', gInTime: '', startTime: '', selectedItems: [], comment: '', notes: '' });
@@ -425,7 +425,6 @@
           } catch (error) { handleError('通信エラー', error); }
         };
 
-        // --- 出欠・共通ロジック ---
         const getUserRole = (userId) => { const u = allUsers.value.find(u => u.id === userId); return u ? u.role : '不明'; };
         const getRecord = (eventId, userId) => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === userId);
         const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
@@ -440,8 +439,6 @@
           let rec = getRecord(eventId, member.id);
           if (rec) rec.status = status;
           else { rec = { eventId, userId: member.id, name: member.name, status, carStatus: '' }; attendanceRecords.value.push(rec); }
-          
-          // 🌟 監督の場合は「送信ボタン」がないため、ポチッと押した瞬間に裏で即保存する
           if (myRole.value === '監督') { saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus); }
         };
         const setLocalCarStatus = (eventId, member, carStatus) => {
@@ -463,7 +460,6 @@
           } catch (e) { alert('通信エラー'); } finally { isSubmittingEvent.value = ''; }
         };
 
-        // --- 監督：イベント修正モーダルロジック ---
         const formatTimeForInput = (timeStr) => {
           if(!timeStr) return '';
           try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } catch(e){}
@@ -471,20 +467,12 @@
         };
         const openEditModal = (ev) => {
           const match = ev.title.match(/\((.*?)\)$/);
-          editForm.eventId = ev.id;
-          editForm.type = ev.type || '練習';
-          editForm.detail = match ? match[1] : '';
-          const d = new Date(ev.date);
-          editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
-          editForm.locationSelect = ev.location || '';
-          editForm.newLocationName = ''; editForm.newLocationUrl = '';
-          editForm.departureTime = formatTimeForInput(ev.departureTime);
-          editForm.gatherTime = formatTimeForInput(ev.gatherTime);
-          editForm.gInTime = formatTimeForInput(ev.gInTime);
-          editForm.startTime = formatTimeForInput(ev.startTime);
-          editForm.selectedItems = ev.items ? ev.items.split('、') : [];
-          editForm.comment = ev.comment || '';
-          editForm.notes = ev.notes || '';
+          editForm.eventId = ev.id; editForm.type = ev.type || '練習'; editForm.detail = match ? match[1] : '';
+          const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
+          editForm.locationSelect = ev.location || ''; editForm.newLocationName = ''; editForm.newLocationUrl = '';
+          editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
+          editForm.gInTime = formatTimeForInput(ev.gInTime); editForm.startTime = formatTimeForInput(ev.startTime);
+          editForm.selectedItems = ev.items ? ev.items.split('、') : []; editForm.comment = ev.comment || ''; editForm.notes = ev.notes || '';
           isEditing.value = true;
         };
         const closeEditModal = () => { isEditing.value = false; };
@@ -494,7 +482,6 @@
           const locName = isNewLoc ? editForm.newLocationName : editForm.locationSelect;
           const locUrl = isNewLoc ? editForm.newLocationUrl : getLocUrl(editForm.locationSelect);
           const fullTitle = `${editForm.type}@${locName}` + (editForm.detail ? ` (${editForm.detail})` : '');
-
           const payload = {
             action: 'updateEvent',
             data: {
@@ -506,8 +493,7 @@
           };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-            alert('修正を保存しました');
-            closeEditModal(); await fetchDashboardData();
+            alert('修正を保存しました'); closeEditModal(); await fetchDashboardData();
           } catch (e) { alert('通信エラー'); } finally { isSavingEdit.value = false; }
         };
 
@@ -520,7 +506,6 @@
           } catch (e) { alert('エラー'); } finally { isSaving.value = false; }
         };
 
-        // --- 監督用サマリー ---
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
           const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
@@ -539,7 +524,6 @@
           };
         });
 
-        // --- 配車管理 ---
         const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.isDummy));
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && !r.assignTo));
         const getPassengersInCar = (carId) => currentEventAttendance.value.filter(r => r.assignTo === carId);
@@ -573,7 +557,6 @@
           } catch (e) { alert('通信エラー'); }
         };
 
-        // --- 行事作成 ---
         const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
         const computedGatherTime = computed(() => {
           if (!evForm.departureTime) return '';
