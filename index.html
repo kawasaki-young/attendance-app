@@ -180,7 +180,7 @@
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【持物】</span>
                   <div class="flex-1 min-w-0"><p class="break-words">{{ event.items }}</p></div>
                 </div>
-
+                
                 <div v-if="event.comment || event.notes" class="mt-3 p-2 bg-[#222222] rounded text-xs border border-gray-700">
                   <p v-if="event.comment" class="mb-1"><span class="text-ky-pink font-bold">監督より: </span>{{ event.comment }}</p>
                   <p v-if="event.notes"><span class="text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
@@ -439,7 +439,6 @@
         const departureMaster = ref([]);
         const itemMaster = ref([]);
 
-        // 🌟 確実な修復：新規登録フォームのステートに vehicleType を追加
         const regForm = reactive({ name: '', role: '保護者(父)', hasFamily: 'no', selectedFamilyId: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const availableFamilies = ref([]);
         const isRegistering = ref(false);
@@ -468,7 +467,6 @@
 
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
-        // 🌟 確実な修復：初期化関数でユーザーチェックを行う
         const initLiff = async () => {
           appState.value = 'loading';
           try {
@@ -482,7 +480,6 @@
           } catch (error) { handleError('初期化エラー', error); }
         };
 
-        // 🌟 確実な修復：ユーザーの存在チェックと新規登録画面への遷移
         const checkUser = async () => {
           try {
             const res = await fetch(`${GAS_URL}?action=checkUser&lineId=${profile.value.userId}`);
@@ -498,7 +495,6 @@
           } catch (error) { handleError('ユーザー確認エラー', error); }
         };
 
-        // 🌟 確実な修復：新規ユーザーの送信処理
         const submitRegistration = async () => {
           isRegistering.value = true;
           const payload = { action: 'registerUser', data: { lineId: profile.value.userId, ...regForm } };
@@ -751,19 +747,22 @@
 
         onMounted(() => { initLiff(); });
 
+        // 🌟 復活：家族追加に関する変数をすべてエクスポート
         return {
           appState, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
           initLiff, formatDate, formatTime, getUserRole, getUniqueUrls,
-          getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, addFamilyMember,
+          getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, 
           directorStats, directorLists, dummyForm, addDummyVehicle,
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
-          shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine
+          shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
+          // ⚠️ ここが抜けていたため画面が真っ暗になっていました ⚠️
+          newMember, isSaving, isSubmittingEvent, addFamilyMember
         };
       }
     }).mount('#app');
