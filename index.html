@@ -158,15 +158,15 @@
                 
                 <div v-if="event.departureTime || event.gatherTime" class="flex items-start">
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【集合】</span>
-                  <div class="flex-1">
+                  <div class="flex-1 min-w-0">
                     <p><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-else-if="event.gatherTime">{{ formatTime(event.gatherTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span></p>
-                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline">出発場所MAP</a>
+                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline block mt-1">出発場所MAP</a>
                   </div>
                 </div>
 
                 <div v-if="event.schedules && event.schedules.length > 0" class="flex items-start">
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【予定】</span>
-                  <div class="flex-1 space-y-1">
+                  <div class="flex-1 min-w-0 space-y-1">
                     <div v-for="(s, idx) in event.schedules" :key="idx" class="leading-snug">
                       <p>・<span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span></p>
                     </div>
@@ -178,9 +178,9 @@
 
                 <div v-if="event.items" class="flex items-start">
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【持物】</span>
-                  <div class="flex-1"><p>{{ event.items }}</p></div>
+                  <div class="flex-1 min-w-0"><p class="break-words">{{ event.items }}</p></div>
                 </div>
-                
+
                 <div v-if="event.comment || event.notes" class="mt-3 p-2 bg-[#222222] rounded text-xs border border-gray-700">
                   <p v-if="event.comment" class="mb-1"><span class="text-ky-pink font-bold">監督より: </span>{{ event.comment }}</p>
                   <p v-if="event.notes"><span class="text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
@@ -439,7 +439,7 @@
         const departureMaster = ref([]);
         const itemMaster = ref([]);
 
-        // 🌟 確実な修復：新規登録フォームのステート（vehicleTypeを含む）
+        // 🌟 確実な修復：新規登録フォームのステートに vehicleType を追加
         const regForm = reactive({ name: '', role: '保護者(父)', hasFamily: 'no', selectedFamilyId: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const availableFamilies = ref([]);
         const isRegistering = ref(false);
