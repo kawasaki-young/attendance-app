@@ -112,10 +112,17 @@
 
         <div v-if="currentTab === 'share'" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-ky-line shadow-lg shadow-ky-line/10">
-            <div class="flex space-x-2 mb-6 bg-[#1a1a1a] p-1 rounded-lg">
-              <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">行事予定の共有</button>
-              <button v-if="myRole !== '監督'" @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">配車表の共有</button>
-            </div>
+            <template v-if="myRole === '監督' || myPermission === '運営'">
+              <div class="flex space-x-2 mb-6 bg-[#1a1a1a] p-1 rounded-lg">
+                <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">行事予定の共有</button>
+                <button @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">配車表の共有</button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="mb-4 border-b border-gray-800 pb-2">
+                <p class="text-sm font-bold text-ky-line">🚗 配車表のLINE共有</p>
+              </div>
+            </template>
 
             <div v-if="shareType === 'schedule'" class="space-y-4">
               <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択 <span class="text-[10px] text-gray-400 font-normal">(複数選択可)</span></label>
@@ -134,14 +141,19 @@
             </div>
 
             <div v-if="shareType === 'allocation'" class="space-y-4">
-              <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択</label>
-              <select v-model="shareAllocationEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm">
-                <option disabled value="">イベントを選択</option><option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
-              </select>
+              <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択 <span class="text-[10px] text-gray-400 font-normal">(複数選択可)</span></label>
+              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 max-h-48 overflow-y-auto space-y-2">
+                <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
+                  <input type="checkbox" :value="event.id" v-model="selectedAllocationEvents" class="accent-ky-line w-5 h-5">
+                  <span class="text-sm flex-1">{{ formatDate(event.date) }} {{ event.title }}</span>
+                </label>
+              </div>
+
               <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
               <p class="text-[10px] text-gray-400 mb-1">※この枠内のテキストは手動で書き換えることができます。</p>
               <textarea v-model="customAllocationText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 outline-none text-xs font-mono leading-relaxed"></textarea>
-              <button @click="shareToLine(customAllocationText)" :disabled="!shareAllocationEventId" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 text-sm">
+
+              <button @click="shareToLine(customAllocationText)" :disabled="selectedAllocationEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl shadow-[0_0_15px_rgba(6,199,85,0.4)] transition disabled:opacity-50 text-sm">
                 LINEグループに配車表を送信
               </button>
             </div>
@@ -445,7 +457,7 @@
 
         const shareType = ref('schedule');
         const selectedShareEvents = ref([]);
-        const shareAllocationEventId = ref('');
+        const selectedAllocationEvents = ref([]); // 配車の複数選択用配列に変更
         const customScheduleText = ref('');
         const customAllocationText = ref('');
 
@@ -516,6 +528,11 @@
             if (data.status === 'success') {
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
+              
+              if (myRole.value !== '監督' && myPermission.value !== '運営') {
+                shareType.value = 'allocation'; // 配車担当等はデフォルトを配車共有に固定
+              }
+              
               locationMaster.value = data.locations || []; departureMaster.value = data.departures || []; itemMaster.value = data.items || [];
               appState.value = 'dashboard';
             } else { handleError('データ取得エラー', data); }
@@ -574,20 +591,28 @@
         const getPassengersInCar = (carId, evtId) => attendanceRecords.value.filter(r => r.eventId === evtId && r.assignTo === carId);
         
         const generatedAllocationText = computed(() => {
-          if (!shareAllocationEventId.value) return '';
-          const targetEvent = events.value.find(e => e.id === shareAllocationEventId.value);
-          if (!targetEvent) return '';
-          let text = '🚗 配車表のお知らせ 🚗\n';
-          text += `◆${formatDate(targetEvent.date)} ${targetEvent.title}\n\n`;
-          const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.isDummy));
-          carsInEvent.forEach(car => {
-            let carName = car.isDummy ? car.name : '';
-            if (!car.isDummy) { const user = allUsers.value.find(u => u.id === car.userId); carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; }
-            text += `【${carName}】\n`;
-            const passengers = getPassengersInCar(car.userId, targetEvent.id);
-            if (passengers.length === 0) { text += '・空席\n'; } 
-            else { passengers.forEach(p => { text += `・${p.name} (${getUserRole(p.userId)})\n`; }); }
-            text += '\n';
+          if (selectedAllocationEvents.value.length === 0) return '';
+          let text = '🚗 配車表のお知らせ 🚗\n\n';
+          const targetEvents = sortedEvents.value.filter(e => selectedAllocationEvents.value.includes(e.id));
+          
+          targetEvents.forEach(targetEvent => {
+            text += `◆${formatDate(targetEvent.date)} ${targetEvent.title}\n`;
+            const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.isDummy));
+            
+            if (carsInEvent.length === 0) {
+              text += '※配車登録がありません\n\n';
+              return;
+            }
+            
+            carsInEvent.forEach(car => {
+              let carName = car.isDummy ? car.name : '';
+              if (!car.isDummy) { const user = allUsers.value.find(u => u.id === car.userId); carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; }
+              text += `【${carName}】\n`;
+              const passengers = getPassengersInCar(car.userId, targetEvent.id);
+              if (passengers.length === 0) { text += '・空席\n'; } 
+              else { passengers.forEach(p => { text += `・${p.name} (${getUserRole(p.userId)})\n`; }); }
+              text += '\n';
+            });
           });
           text += '👇 自分の配車確認はこちら 👇\n'; text += APP_URL;
           return text;
@@ -760,7 +785,7 @@
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
-          shareType, selectedShareEvents, shareAllocationEventId, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
+          shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           // ⚠️ ここが抜けていたため画面が真っ暗になっていました ⚠️
           newMember, isSaving, isSubmittingEvent, addFamilyMember
         };
