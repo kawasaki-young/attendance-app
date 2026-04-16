@@ -22,10 +22,24 @@
 <body class="bg-ky-black text-ky-white font-sans antialiased" :class="{'modal-open': isEditing}">
   <div id="app" v-cloak>
     <header class="bg-ky-black p-4 sticky top-0 z-50 border-b border-ky-pink shadow-[0_4px_15px_rgba(255,95,227,0.1)]">
-      <h1 class="text-lg font-bold flex items-center tracking-wider text-ky-white">
-        <span class="mr-2 text-ky-pink">⚾️</span> 川崎ヤング 管理システム
+      <h1 class="text-base font-bold flex items-center tracking-wider text-ky-white">
+        <img src="./logo.webp" alt="ロゴ" class="w-6 h-6 object-contain mr-2">
+        川崎ヤング 出欠/配車 システム
       </h1>
     </header>
+
+    <div v-if="customAlert.show" class="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center px-4" v-cloak>
+      <div class="bg-[#111111] border border-ky-pink rounded-xl p-6 w-full max-w-xs shadow-[0_0_20px_rgba(255,95,227,0.15)] text-center transform transition-all">
+        <div class="flex justify-center mb-4">
+          <img src="./logo.webp" alt="川崎ヤング" class="w-16 h-16 object-contain">
+        </div>
+        <h3 class="text-base font-bold text-white mb-2">川崎ヤング</h3>
+        <p class="text-sm text-gray-300 mb-6 whitespace-pre-wrap">{{ customAlert.message }}</p>
+        <button @click="closeAlert" class="w-full bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 text-sm">
+          OK
+        </button>
+      </div>
+    </div>
 
     <main class="container mx-auto px-4 py-6 pb-24 relative">
       
@@ -477,6 +491,11 @@
         const isSavingEdit = ref(false);
         const editForm = reactive({ eventId: '', type: '練習', detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
+        // カスタムポップアップ用の状態管理
+        const customAlert = reactive({ show: false, message: '' });
+        const showAlert = (msg) => { customAlert.message = msg; customAlert.show = true; };
+        const closeAlert = () => { customAlert.show = false; };
+
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
         const initLiff = async () => {
@@ -512,7 +531,7 @@
           const payload = { action: 'registerUser', data: { lineId: profile.value.userId, ...regForm } };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-            alert('登録が完了しました！');
+            showshowAlert('登録が完了しました！');
             appState.value = 'loading';
             await fetchDashboardData();
           } catch (e) { handleError('登録エラー', e); }
@@ -622,12 +641,12 @@
 
         const shareToLine = async (textToShare) => {
           if (!liff.isApiAvailable('shareTargetPicker')) {
-            alert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
+            showshowAlert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
           }
           try {
             const res = await liff.shareTargetPicker([{ type: 'text', text: textToShare }]);
-            if (res) alert('LINEに送信しました！');
-          } catch (error) { console.error(error); alert('送信に失敗しました、またはキャンセルされました。'); }
+            if (res) showAlert('LINEに送信しました！');
+          } catch (error) { console.error(error); showAlert('送信に失敗しました、またはキャンセルされました。'); }
         };
 
         const saveSingleAttendanceToGas = async (eventId, member, status, carStatus) => {
@@ -648,7 +667,7 @@
           const recordsToSave = familyMembers.value.map(member => {
             const rec = getRecord(eventId, member.id); return rec ? rec : { eventId, userId: member.id, name: member.name, status: '未定', carStatus: '' };
           });
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) }); alert('出欠データを確定しました！'); } catch (e) { alert('通信エラー'); } finally { isSubmittingEvent.value = ''; }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) }); showAlert('出欠データを確定しました！'); } catch (e) { showAlert('通信エラー'); } finally { isSubmittingEvent.value = ''; }
         };
 
         const formatTimeForInput = (timeStr) => {
@@ -706,11 +725,11 @@
               schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
           };
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); alert('修正を保存しました'); closeEditModal(); await fetchDashboardData(); } catch (e) { alert('通信エラー'); } finally { isSavingEdit.value = false; }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); showAlert('修正を保存しました'); closeEditModal(); await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); } finally { isSavingEdit.value = false; }
         };
         const addFamilyMember = async () => {
           if (!newMember.name) return; isSaving.value = true;
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); alert('追加しました！'); newMember.name = ''; await fetchDashboardData(); } catch (e) { alert('エラー'); } finally { isSaving.value = false; }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); showAlert('追加しました！'); newMember.name = ''; await fetchDashboardData(); } catch (e) { showAlert('エラー'); } finally { isSaving.value = false; }
         };
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
@@ -729,15 +748,15 @@
           return `${name} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
         };
         const addDummyVehicle = async () => {
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); dummyForm.capacity = ''; await fetchDashboardData(); } catch (e) { alert('通信エラー'); }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); dummyForm.capacity = ''; await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); }
         };
         const executeAllocation = async () => {
           isAllocating.value = true;
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveAllocation', data: { eventId: globalEventId.value, assignments: selectedPassengers.value, targetVehicleId: targetVehicleId.value } }) }); selectedPassengers.value = []; await fetchDashboardData(); } catch (e) { alert('通信エラー'); } finally { isAllocating.value = false; }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveAllocation', data: { eventId: globalEventId.value, assignments: selectedPassengers.value, targetVehicleId: targetVehicleId.value } }) }); selectedPassengers.value = []; await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); } finally { isAllocating.value = false; }
         };
         const unassign = async (userId) => {
           if(!confirm('配車を解除しますか？')) return;
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) }); await fetchDashboardData(); } catch (e) { alert('通信エラー'); }
+          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) }); await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); }
         };
         const computedGatherTime = computed(() => {
           if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -759,12 +778,12 @@
             }
           };
           try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); alert('イベントを作成しました！');
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); showAlert('イベントを作成しました！');
             evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
             evForm.schedules = [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
             evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
             currentTab.value = 'events'; await fetchDashboardData();
-          } catch (e) { alert('通信エラー'); } finally { isCreating.value = false; }
+          } catch (e) { showAlert('通信エラー'); } finally { isCreating.value = false; }
         };
 
         const formatDate = (dateStr) => { if(!dateStr) return ''; const d = new Date(dateStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
@@ -786,8 +805,8 @@
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
-          // ⚠️ ここが抜けていたため画面が真っ暗になっていました ⚠️
-          newMember, isSaving, isSubmittingEvent, addFamilyMember
+          newMember, isSaving, isSubmittingEvent, addFamilyMember,
+          customAlert, closeAlert // ←この行を追加
         };
       }
     }).mount('#app');
