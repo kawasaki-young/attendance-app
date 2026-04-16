@@ -531,7 +531,7 @@
           const payload = { action: 'registerUser', data: { lineId: profile.value.userId, ...regForm } };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
-            showshowAlert('登録が完了しました！');
+            showAlert('登録が完了しました！');
             appState.value = 'loading';
             await fetchDashboardData();
           } catch (e) { handleError('登録エラー', e); }
@@ -641,7 +641,7 @@
 
         const shareToLine = async (textToShare) => {
           if (!liff.isApiAvailable('shareTargetPicker')) {
-            showshowAlert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
+            showAlert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return;
           }
           try {
             const res = await liff.shareTargetPicker([{ type: 'text', text: textToShare }]);
