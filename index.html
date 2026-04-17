@@ -49,9 +49,15 @@
         <button @click="initLiff" class="mt-4 bg-white text-red-900 px-4 py-2 rounded font-bold text-sm">再読み込み</button>
       </div>
 
-      <div v-if="appState === 'loading'" class="flex flex-col items-center justify-center h-64">
-        <div class="animate-spin h-10 w-10 border-4 border-ky-pink rounded-full border-t-transparent"></div>
-        <p class="mt-4 text-gray-400 font-medium">{{ loadingMessage }}</p>
+      <div v-if="appState === 'loading'" class="flex flex-col items-center justify-center h-64 max-w-sm mx-auto w-full px-8">
+        <img src="./logo.webp" alt="ロゴ" class="w-16 h-16 object-contain mb-6 animate-pulse">
+        <div class="w-full bg-[#1a1a1a] rounded-full h-3 mb-2 overflow-hidden border border-gray-700 relative shadow-inner">
+          <div class="bg-ky-pink h-3 rounded-full transition-all duration-200 ease-out shadow-[0_0_10px_rgba(255,95,227,0.6)]" :style="{ width: loadingProgress + '%' }"></div>
+        </div>
+        <div class="flex justify-between w-full text-xs font-medium tracking-wider">
+          <span class="text-ky-pink">{{ loadingMessage }}</span>
+          <span class="text-white font-bold">{{ loadingProgress }}%</span>
+        </div>
       </div>
 
       <div v-if="appState === 'registering'" class="max-w-md mx-auto bg-[#111111] rounded-xl p-6 border border-ky-pink/30 shadow-lg">
@@ -456,6 +462,32 @@
         const loadingMessage = ref('データ読み込み中...');
         const errorMessage = ref('');
         const profile = ref(null);
+
+        // プログレスバー制御用の状態管理
+        const loadingProgress = ref(0);
+        let progressInterval = null;
+
+        const startLoadingProgress = () => {
+          loadingProgress.value = 0;
+          loadingMessage.value = 'システム準備中...';
+          if (progressInterval) clearInterval(progressInterval);
+          progressInterval = setInterval(() => {
+            if (loadingProgress.value < 90) {
+              loadingProgress.value += Math.floor(Math.random() * 5) + 1; // ランダムに進捗を増やす
+              // 進行度に応じてテキストを変え、体感速度を上げる
+              if (loadingProgress.value > 25 && loadingProgress.value < 60) loadingMessage.value = 'ユーザー認証中...';
+              else if (loadingProgress.value >= 60 && loadingProgress.value < 85) loadingMessage.value = '最新データを同期中...';
+              else if (loadingProgress.value >= 85) loadingMessage.value = '画面を描画中...';
+            }
+          }, 150);
+        };
+        
+        const finishLoadingProgress = (callback) => {
+          if (progressInterval) clearInterval(progressInterval);
+          loadingProgress.value = 100;
+          loadingMessage.value = '完了しました！';
+          setTimeout(() => { if (callback) callback(); }, 300); // 100%を少し見せてから遷移
+        };
         
         const currentTab = ref('events'); 
         const globalEventId = ref(''); 
@@ -507,6 +539,7 @@
 
         const initLiff = async () => {
           appState.value = 'loading';
+          startLoadingProgress(); // ←ここを追加
           try {
             await liff.init({ liffId: LIFF_ID });
             if (liff.isLoggedIn()) { 
@@ -515,7 +548,7 @@
             } else { 
               liff.login(); 
             }
-          } catch (error) { handleError('初期化エラー', error); }
+          } catch (error) { handleError('初期化エラー', error); if (progressInterval) clearInterval(progressInterval); }
         };
 
         const checkUser = async () => {
@@ -528,9 +561,9 @@
               const famRes = await fetch(`${GAS_URL}?action=getFamilies`);
               const famData = await famRes.json();
               if (famData.status === 'success') availableFamilies.value = famData.families;
-              appState.value = 'registering';
+              finishLoadingProgress(() => { appState.value = 'registering'; }); // ←ここを変更
             }
-          } catch (error) { handleError('ユーザー確認エラー', error); }
+          } catch (error) { handleError('ユーザー確認エラー', error); if (progressInterval) clearInterval(progressInterval); }
         };
 
         const submitRegistration = async () => {
@@ -540,6 +573,7 @@
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
             showAlert('登録が完了しました！');
             appState.value = 'loading';
+            startLoadingProgress(); // ←ここを追加
             await fetchDashboardData();
           } catch (e) { handleError('登録エラー', e); }
           finally { isRegistering.value = false; }
@@ -556,12 +590,18 @@
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
               
               if (myRole.value !== '監督' && myPermission.value !== '運営') {
-                shareType.value = 'allocation'; // 配車担当等はデフォルトを配車共有に固定
+                shareType.value = 'allocation';
               }
               
               locationMaster.value = data.locations || []; departureMaster.value = data.departures || []; itemMaster.value = data.items || [];
-              appState.value = 'dashboard';
-            } else { handleError('データ取得エラー', data); }
+              
+              // ロード画面中であればプログレスバーを完了させて遷移
+              if (appState.value === 'loading') {
+                finishLoadingProgress(() => { appState.value = 'dashboard'; });
+              } else {
+                appState.value = 'dashboard';
+              }
+            } else { handleError('データ取得エラー', data); if (progressInterval) clearInterval(progressInterval); }
           } catch (error) { handleError('通信エラー', error); }
         };
 
@@ -830,7 +870,7 @@
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           newMember, isSaving, isSubmittingEvent, addFamilyMember,
-          customAlert, closeAlert // ←この行を追加
+          customAlert, closeAlert, showPastEvents, loadingProgress
         };
       }
     }).mount('#app');
