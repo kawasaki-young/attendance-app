@@ -78,6 +78,12 @@
               <p class="text-[10px] text-gray-400">※車出しをしない場合は空欄のままでOKです。</p>
             </div>
           </div>
+          <div v-if="['保護者(父)', '保護者(母)', 'コーチ'].includes(regForm.role) && regForm.hasFamily === 'no'" class="bg-gray-800/30 p-4 rounded border border-gray-700 mt-4 mb-2">
+            <label class="block text-sm font-bold text-ky-pink mb-1">所属選手（1人目）の登録</label>
+            <p class="text-[10px] text-gray-400 mb-3">※2人目以降の選手やご家族は、登録完了後の「家族」タブから追加できます。</p>
+            <input v-model="regForm.playerName" type="text" placeholder="選手の氏名 (フルネーム)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none focus:border-ky-pink text-sm">
+          </div>
+
           <div class="pt-4 border-t border-gray-800 mt-2">
             <label class="block text-sm font-bold text-gray-300 mb-2">すでに他のご家族が登録済みですか？</label>
             <div class="flex space-x-2 mb-3">
@@ -225,10 +231,11 @@
                   </div>
                   <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="flex items-center justify-between border-t border-gray-700 pt-2 mt-2">
                     <span class="text-xs text-gray-400">車出し可能ですか？</span>
-                    <div class="flex space-x-2">
-                      <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">可</button>
-                      <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="px-3 py-1 rounded text-xs transition">不可</button>
-                    </div>
+                    <div class="flex space-x-2 w-full">
+                    <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition">配車 可</button>
+                    <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition">現地直行</button>
+                    <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition">配車 不可</button>
+                  </div>
                   </div>
                 </div>
                 <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center text-sm">
@@ -465,7 +472,7 @@
         const departureMaster = ref([]);
         const itemMaster = ref([]);
 
-        const regForm = reactive({ name: '', role: '保護者(父)', hasFamily: 'no', selectedFamilyId: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
+        const regForm = reactive({ name: '', role: '保護者(父)', hasFamily: 'no', selectedFamilyId: '', vehicleName: '', vehicleType: '', vehicleCapacity: '', playerName: '' });
         const availableFamilies = ref([]);
         const isRegistering = ref(false);
 
@@ -616,7 +623,7 @@
           
           targetEvents.forEach(targetEvent => {
             text += `◆${formatDate(targetEvent.date)} ${targetEvent.title}\n`;
-            const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.isDummy));
+            const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy));
             
             if (carsInEvent.length === 0) {
               text += '※配車登録がありません\n\n';
@@ -626,6 +633,7 @@
             carsInEvent.forEach(car => {
               let carName = car.isDummy ? car.name : '';
               if (!car.isDummy) { const user = allUsers.value.find(u => u.id === car.userId); carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; }
+              if (car.carStatus === '現地直行') carName += ' [現地直行]';
               text += `【${carName}】\n`;
               const passengers = getPassengersInCar(car.userId, targetEvent.id);
               if (passengers.length === 0) { text += '・空席\n'; } 
@@ -740,12 +748,13 @@
           const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
           return { players: participants.filter(p => getUserRole(p.userId) === '選手'), adults: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督' || getUserRole(p.userId) === 'OB').map(p => ({...p, role: getUserRole(p.userId)})) };
         });
-        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.isDummy));
+        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy));
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && !r.assignTo));
         const getVehicleDisplayName = (car) => {
           let cap = 0; let name = '';
           if (car.isDummy) { name = car.name; cap = Number(car.capacity) || 0; } else { const user = allUsers.value.find(u => u.id === car.userId); name = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; cap = user ? Number(user.vehicleCapacity) || 0 : 0; }
-          return `${name} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
+          const directLabel = car.carStatus === '現地直行' ? ' 【現地直行】' : '';
+          return `${name}${directLabel} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
         };
         const addDummyVehicle = async () => {
           try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); dummyForm.capacity = ''; await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); }
