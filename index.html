@@ -85,9 +85,9 @@
             </div>
           </div>
 
-          <div v-if="['保護者(父)', '保護者(母)', 'コーチ'].includes(regForm.role) && regForm.hasFamily === 'no'" class="bg-gray-800/30 p-4 rounded border border-gray-700 mt-4 mb-2">
+          <div v-if="['保護者(父)', '保護者(母)', 'コーチ'].includes(regForm.role)" class="bg-gray-800/30 p-4 rounded border border-gray-700 mt-4 mb-2">
             <label class="block text-sm font-bold text-ky-pink mb-1">所属選手（1人目）の登録</label>
-            <p class="text-[10px] text-gray-400 mb-3">※2人目以降の選手やご家族は、登録完了後の「家族」タブから追加できます。</p>
+            <p class="text-[10px] text-gray-400 mb-3">※すでに他のご家族が選手を登録済みの場合は<span class="text-ky-pink font-bold">空欄</span>にしてください。<br>※2人目以降の選手は登録完了後の「家族」タブから追加できます。</p>
             <input v-model="regForm.playerName" type="text" placeholder="選手の氏名 (フルネーム)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none focus:border-ky-pink text-sm">
           </div>
 
