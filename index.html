@@ -283,7 +283,15 @@
         <div v-if="currentTab === 'family'" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
             <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">あなたの家族構成</h3>
-            <ul class="space-y-3 mb-6"><li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800"><span class="font-medium">{{ member.name }}</span><span class="text-xs px-2 py-1 bg-gray-800 rounded text-gray-400">{{ member.role }}</span></li></ul>
+            <ul class="space-y-3 mb-6">
+              <li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800">
+                <div class="flex items-center">
+                  <span class="font-medium text-sm">{{ member.name }}</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-gray-800 rounded text-gray-400 ml-2">{{ member.role }}</span>
+                </div>
+                <button v-if="member.id !== profile?.userId" @click="deleteFamilyMember(member.id, member.name)" class="text-[10px] text-red-400 border border-red-900/50 px-3 py-1.5 rounded hover:bg-red-900/50 transition">削除</button>
+              </li>
+            </ul>
             <h4 class="font-bold text-xs text-gray-300 mb-3 mt-6">＋ 新しい家族（選手）を追加</h4>
             <form @submit.prevent="addFamilyMember" class="space-y-3">
               <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm">
@@ -813,6 +821,17 @@
           if (!newMember.name) return; isSaving.value = true;
           try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); showAlert('追加しました！'); newMember.name = ''; await fetchDashboardData(); } catch (e) { showAlert('エラー'); } finally { isSaving.value = false; }
         };
+
+        const deleteFamilyMember = async (memberId, memberName) => {
+          if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
+            showAlert(`${memberName} を削除しました。`); 
+            await fetchDashboardData(); // 削除後に画面を自動更新
+          } catch (e) { 
+            showAlert('通信エラーが発生しました。'); 
+          }
+        };
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
           const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
@@ -902,7 +921,7 @@
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
-          newMember, isSaving, isSubmittingEvent, addFamilyMember,
+          newMember, isSaving, isSubmittingEvent, addFamilyMember, deleteFamilyMember,
           customAlert, closeAlert, showPastEvents, loadingProgress
         };
       }
