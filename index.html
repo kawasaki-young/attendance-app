@@ -773,11 +773,15 @@
           if (rec) { rec.carStatus = carStatus; if (myRole.value === '監督') saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus); }
         };
         const submitEventAttendance = async (eventId) => {
-          isSubmittingEvent.value = eventId;
+          appState.value = 'loading'; startLoadingProgress();
           const recordsToSave = familyMembers.value.map(member => {
             const rec = getRecord(eventId, member.id); return rec ? rec : { eventId, userId: member.id, name: member.name, status: '未定', carStatus: '' };
           });
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) }); showAlert('出欠データを確定しました！'); } catch (e) { showAlert('通信エラー'); } finally { isSubmittingEvent.value = ''; }
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) }); 
+            await fetchDashboardData(); // 送信後にデータを最新に同期
+            showAlert('出欠データを確定しました！'); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
         const formatTimeForInput = (timeStr) => {
@@ -822,7 +826,7 @@
         };
 
         const submitEditEvent = async () => {
-          isSavingEdit.value = true;
+          appState.value = 'loading'; startLoadingProgress();
           const isNewDepLoc = editForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? editForm.newDepLocationName : editForm.depLocationSelect; const depLocUrl = isNewDepLoc ? editForm.newDepLocationUrl : getDepLocUrl(editForm.depLocationSelect);
           const finalSchedules = formatSchedulesForGAS(editForm.schedules);
           const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
@@ -835,22 +839,32 @@
               schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
           };
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); showAlert('修正を保存しました'); closeEditModal(); await fetchDashboardData(); } catch (e) { showAlert('通信エラー'); } finally { isSavingEdit.value = false; }
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
+            closeEditModal(); 
+            await fetchDashboardData(); 
+            showAlert('修正を保存しました'); 
+          } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
         };
         const addFamilyMember = async () => {
-          if (!newMember.name) return; isSaving.value = true;
-          try { await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); showAlert('追加しました！'); newMember.name = ''; await fetchDashboardData(); } catch (e) { showAlert('エラー'); } finally { isSaving.value = false; }
+          if (!newMember.name) return;
+          appState.value = 'loading'; startLoadingProgress();
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); 
+            newMember.name = ''; 
+            await fetchDashboardData(); 
+            showAlert('追加しました！'); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました。'); }
         };
 
         const deleteFamilyMember = async (memberId, memberName) => {
           if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
+          appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
+            await fetchDashboardData();
             showAlert(`${memberName} を削除しました。`); 
-            await fetchDashboardData(); // 削除後に画面を自動更新
-          } catch (e) { 
-            showAlert('通信エラーが発生しました。'); 
-          }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
         };
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
@@ -872,53 +886,51 @@
         const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy));
 
         const addDummyVehicle = async () => {
+          appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); 
             dummyForm.capacity = ''; 
             await fetchDashboardData(); 
             showAlert('手配車両を追加しました！');
-          } catch (e) { showAlert('通信エラー'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
         const updateDummyVehicle = async (dummy) => {
           if (!dummy.capacity) { showAlert('定員を入力してください。'); return; }
+          appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId, capacity: dummy.capacity } }) });
             await fetchDashboardData();
             showAlert(`${dummy.name} の定員を更新しました！`);
-          } catch (e) { showAlert('通信エラー'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
         const deleteDummyVehicle = async (dummy) => {
           if (!confirm(`${dummy.name} の手配を削除しますか？\n※既に配車されているメンバーがいる場合、未配車に戻ります。`)) return;
+          appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId } }) });
             await fetchDashboardData();
             showAlert(`${dummy.name} の手配を削除しました。`);
-          } catch (e) { showAlert('通信エラー'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
         const executeAllocation = async () => {
-          isAllocating.value = true;
+          appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveAllocation', data: { eventId: globalEventId.value, assignments: selectedPassengers.value, targetVehicleId: targetVehicleId.value } }) });
             selectedPassengers.value = [];
             await fetchDashboardData();
             showAlert('配車の割り当てが完了しました！');
-          } catch (e) {
-            showAlert('通信エラー');
-          } finally {
-            isAllocating.value = false;
-          }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
         const unassign = async (userId) => {
           if(!confirm('このメンバーの配車を解除して、未定に戻しますか？')) return;
+          appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) });
             await fetchDashboardData();
             showAlert('配車を解除し、乗車待ちに戻しました。');
-          } catch (e) {
-            showAlert('通信エラー');
-          }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
         const computedGatherTime = computed(() => {
           if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -926,7 +938,7 @@
         const addNewItem = (targetForm) => { if (targetForm.newItem && !itemMaster.value.includes(targetForm.newItem)) { itemMaster.value.push(targetForm.newItem); targetForm.selectedItems.push(targetForm.newItem); targetForm.newItem = ''; } };
         
         const submitEvent = async () => {
-          isCreating.value = true;
+          appState.value = 'loading'; startLoadingProgress();
           const isNewDepLoc = evForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? evForm.newDepLocationName : evForm.depLocationSelect; const depLocUrl = isNewDepLoc ? evForm.newDepLocationUrl : getDepLocUrl(evForm.depLocationSelect);
           const finalSchedules = formatSchedulesForGAS(evForm.schedules);
           const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
@@ -940,12 +952,14 @@
             }
           };
           try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); showAlert('イベントを作成しました！');
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
             evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
             evForm.schedules = [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
             evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
-            currentTab.value = 'events'; await fetchDashboardData();
-          } catch (e) { showAlert('通信エラー'); } finally { isCreating.value = false; }
+            currentTab.value = 'events'; 
+            await fetchDashboardData();
+            showAlert('イベントを作成しました！');
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); }
         };
 
         const formatDate = (dateStr) => { if(!dateStr) return ''; const d = new Date(dateStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
