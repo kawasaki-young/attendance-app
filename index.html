@@ -585,12 +585,13 @@
 
         const checkUser = async () => {
           try {
-            const res = await fetch(`${GAS_URL}?action=checkUser&lineId=${profile.value.userId}`);
+            const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
+            const res = await fetch(`${GAS_URL}?action=checkUser&lineId=${profile.value.userId}&_t=${timestamp}`);
             const data = await res.json();
             if (data.status === 'registered') {
               await fetchDashboardData();
             } else {
-              const famRes = await fetch(`${GAS_URL}?action=getFamilies`);
+              const famRes = await fetch(`${GAS_URL}?action=getFamilies&_t=${timestamp}`);
               const famData = await famRes.json();
               if (famData.status === 'success') availableFamilies.value = famData.families;
               finishLoadingProgress(() => { appState.value = 'registering'; });
@@ -629,7 +630,8 @@
 
         const fetchDashboardData = async () => {
           try {
-            const res = await fetch(`${GAS_URL}?action=getDashboardData&lineId=${profile.value.userId}`);
+            const timestamp = new Date().getTime(); // キャッシュ防止用のタイムスタンプ
+            const res = await fetch(`${GAS_URL}?action=getDashboardData&lineId=${profile.value.userId}&_t=${timestamp}`);
             const data = await res.json();
             if (data.status === 'success') {
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
