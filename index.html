@@ -52,7 +52,7 @@
         <button @click="initLiff" class="mt-4 bg-white text-red-900 px-4 py-2 rounded font-bold text-sm">再読み込み</button>
       </div>
 
-      <div v-if="appState === 'loading'" class="flex flex-col items-center justify-center h-64 max-w-sm mx-auto w-full px-8">
+      <div v-if="appState === 'loading' && !isDashboardLoaded" class="flex flex-col items-center justify-center h-64 max-w-sm mx-auto w-full px-8">
         <img src="./logo.webp" alt="ロゴ" class="w-16 h-16 object-contain mb-6 animate-pulse">
         <div class="w-full bg-[#1a1a1a] rounded-full h-3 mb-2 overflow-hidden border border-gray-700 relative shadow-inner">
           <div class="bg-ky-pink h-3 rounded-full transition-all duration-200 ease-out shadow-[0_0_10px_rgba(255,95,227,0.6)]" :style="{ width: loadingProgress + '%' }"></div>
@@ -60,6 +60,19 @@
         <div class="flex justify-between w-full text-xs font-medium tracking-wider">
           <span class="text-ky-pink">{{ loadingMessage }}</span>
           <span class="text-white font-bold">{{ loadingProgress }}%</span>
+        </div>
+      </div>
+
+      <div v-if="appState === 'loading' && isDashboardLoaded" class="fixed inset-0 bg-black/80 z-[110] flex justify-center items-center px-4 backdrop-blur-sm" v-cloak>
+        <div class="bg-[#111111] border border-ky-pink rounded-xl p-8 w-full max-w-xs shadow-[0_0_30px_rgba(255,95,227,0.2)] text-center flex flex-col items-center">
+          <img src="./logo.webp" alt="ロゴ" class="w-16 h-16 object-contain mb-6 animate-pulse">
+          <div class="w-full bg-[#1a1a1a] rounded-full h-3 mb-2 overflow-hidden border border-gray-700 relative shadow-inner">
+            <div class="bg-ky-pink h-3 rounded-full transition-all duration-200 ease-out shadow-[0_0_10px_rgba(255,95,227,0.6)]" :style="{ width: loadingProgress + '%' }"></div>
+          </div>
+          <div class="flex justify-between w-full text-xs font-medium tracking-wider">
+            <span class="text-ky-pink">{{ loadingMessage }}</span>
+            <span class="text-white font-bold">{{ loadingProgress }}%</span>
+          </div>
         </div>
       </div>
 
@@ -113,7 +126,7 @@
         </form>
       </div>
 
-      <div v-if="appState === 'dashboard'">
+      <div v-if="appState === 'dashboard' || (appState === 'loading' && isDashboardLoaded)">
         
         <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
           <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定</button>
@@ -272,7 +285,7 @@
                 </div>
                 <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center text-sm">
                   <span v-if="isSubmittingEvent === event.id" class="animate-spin h-4 w-4 border-2 border-ky-black rounded-full border-t-transparent mr-2"></span>
-                  {{ isSubmittingEvent === event.id ? '送信中...' : '出欠を確定・送信する' }}
+                  {{ isSubmittingEvent === event.id ? '更新中...' : (hasSubmittedAttendance(event.id) ? '出欠を修正して更新する' : '出欠を確定・送信する') }}
                 </button>
               </template>
               
@@ -508,6 +521,7 @@
         const APP_URL = "https://kawasaki-young.github.io/attendance-app/"; 
 
         const appState = ref('loading'); 
+        const isDashboardLoaded = ref(false); // 【追加】ダッシュボード初回ロード完了判定
         const loadingMessage = ref('データ読み込み中...');
         const errorMessage = ref('');
         const profile = ref(null);
@@ -649,6 +663,7 @@
             const res = await fetch(`${GAS_URL}?action=getDashboardData&lineId=${profile.value.userId}&_t=${timestamp}`);
             const data = await res.json();
             if (data.status === 'success') {
+              isDashboardLoaded.value = true; // 【追加】データ取得成功時にフラグを立てる
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
               
@@ -967,8 +982,17 @@
 
         onMounted(() => { initLiff(); });
 
+        // 【追加】出欠が既にデータベースに保存されているか判定するメソッド
+        const hasSubmittedAttendance = (eventId) => {
+          return familyMembers.value.some(member => {
+            const rec = attendanceRecords.value.find(r => r.eventId === eventId && r.userId === member.id);
+            return rec !== undefined;
+          });
+        };
+
         return {
-          appState, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
+          appState, isDashboardLoaded, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
+          hasSubmittedAttendance, // 【追加】
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
