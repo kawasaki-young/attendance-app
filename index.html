@@ -129,19 +129,19 @@
       <div v-if="appState === 'dashboard' || (appState === 'loading' && isDashboardLoaded)">
         
         <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
+          <button v-if="myRole === '監督'" @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
+          
           <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定</button>
           
           <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : (myRole === '監督' ? 'bg-[#222222] text-ky-pink border border-ky-pink/30' : 'bg-[#222222] text-gray-300 border border-gray-700')" class="flex-grow px-1 py-3 rounded-lg text-xs transition">出欠状況</button>
-          
-          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">家族</button>
-          
-          <button v-if="myRole === '監督'" @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
-          
-          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車管理</button>
-          
-          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車表</button>
 
           <button v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" @click="currentTab = 'share'" :class="currentTab === 'share' ? 'bg-ky-line text-white font-bold shadow-md' : 'bg-[#222222] text-ky-line border border-ky-line/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">LINE共有</button>
+          
+          <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車管理</button>
+
+          <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">家族</button>
+          
+          <button v-if="myRole !== '監督'" @click="currentTab = 'view_allocation'" :class="currentTab === 'view_allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車表</button>
         </div>
 
         <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-6">
@@ -662,9 +662,14 @@
             const res = await fetch(`${GAS_URL}?action=getDashboardData&lineId=${profile.value.userId}&_t=${timestamp}`);
             const data = await res.json();
             if (data.status === 'success') {
-              isDashboardLoaded.value = true; // 【追加】データ取得成功時にフラグを立てる
+              isDashboardLoaded.value = true;
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
+              
+              // 🌟 監督ログイン時、初期タブを「予定作成」に自動セットする
+              if (appState.value === 'loading' && myRole.value === '監督') {
+                currentTab.value = 'create_event';
+              }
               
               if (myRole.value !== '監督' && myPermission.value !== '運営') {
                 shareType.value = 'allocation';
