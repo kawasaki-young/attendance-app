@@ -131,12 +131,11 @@
         <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
           <button @click="currentTab = 'events'" :class="currentTab === 'events' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定</button>
           
+          <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : (myRole === '監督' ? 'bg-[#222222] text-ky-pink border border-ky-pink/30' : 'bg-[#222222] text-gray-300 border border-gray-700')" class="flex-grow px-1 py-3 rounded-lg text-xs transition">出欠状況</button>
+          
           <button v-if="myRole !== '監督'" @click="currentTab = 'family'" :class="currentTab === 'family' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-gray-300 border border-gray-700'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">家族</button>
           
-          <template v-if="myRole === '監督'">
-            <button @click="currentTab = 'director'" :class="currentTab === 'director' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">出欠状況</button>
-            <button @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
-          </template>
+          <button v-if="myRole === '監督'" @click="currentTab = 'create_event'" :class="currentTab === 'create_event' ? 'bg-green-500 text-ky-black font-bold shadow-md' : 'bg-[#222222] text-green-500 border border-green-500/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">予定作成</button>
           
           <button v-if="(myPermission === '配車' || myPermission === '運営') && myRole !== '監督'" @click="currentTab = 'allocation'" :class="currentTab === 'allocation' ? 'bg-ky-pink text-ky-black font-bold shadow-md' : 'bg-[#222222] text-ky-pink border border-ky-pink/30'" class="flex-grow px-1 py-3 rounded-lg text-xs transition">配車管理</button>
           
@@ -322,7 +321,7 @@
 
         <div v-if="currentTab === 'director' && globalEventId" class="space-y-6">
           <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
-            <div class="bg-[#1a1a1a] p-4 rounded-lg border border-gray-800 mb-6">
+            <div v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" class="bg-[#1a1a1a] p-4 rounded-lg border border-gray-800 mb-6">
               <p class="text-xs font-bold text-gray-300 mb-3">＋ チームバス・監督車の手配</p>
               
               <div v-if="dummyVehicles.length > 0" class="mb-4 space-y-2">
