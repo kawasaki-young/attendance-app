@@ -107,6 +107,12 @@
         </div>
 
         <div v-if="currentTab === 'events'" class="space-y-6">
+          <div class="flex justify-end mb-2">
+            <button @click="showPastEvents = !showPastEvents" class="text-[10px] text-gray-400 border border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+              {{ showPastEvents ? '▼ 過去の予定を隠す' : '▶︎ 過去の予定も表示する' }}
+            </button>
+          </div>
+          <div v-if="sortedEvents.length === 0" class="text-center py-10 text-gray-500">表示できる予定がありません。</div>
           <div v-for="event in sortedEvents" :key="event.id" class="bg-[#111111] rounded-xl border border-gray-800 overflow-hidden shadow-lg">
             <div class="bg-gradient-to-r from-gray-900 to-[#1a1a1a] p-4 border-b border-ky-pink/30">
               <h3 class="text-lg font-bold text-ky-white mb-2">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
@@ -158,16 +164,38 @@
           <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-green-500 shadow-lg">
             <h2 class="text-lg font-bold text-green-400 mb-4">新しい予定を作成</h2>
             <form @submit.prevent="submitEvent" class="space-y-5">
-              <div class="grid grid-cols-2 gap-3">
-                <div class="col-span-2">
+              <div class="space-y-4">
+                <div>
                   <label class="block text-[10px] font-bold text-gray-400 mb-2">種別 (複数選択可)</label>
                   <div class="flex flex-wrap gap-2">
                     <button v-for="t in ['練習', 'OP戦', '公式戦', '合宿']" type="button" @click="toggleSelection(evForm.types, t)" :class="evForm.types.includes(t) ? 'chip-active' : 'chip-inactive'" class="px-4 py-2 rounded-full border text-xs transition">{{ t }}</button>
                   </div>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">日付</label><input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 text-sm"></div>
-                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">大会名・補足</label><input v-model="evForm.detail" type="text" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 text-sm"></div>
+                <div class="flex space-x-3">
+                  <div class="w-1/2"><label class="block text-[10px] font-bold text-gray-400 mb-1">日付</label><input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                  <div class="w-1/2"><label class="block text-[10px] font-bold text-gray-400 mb-1">大会名・補足</label><input v-model="evForm.detail" type="text" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                </div>
               </div>
+              
+              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-1">
+                  <h4 class="text-xs font-bold text-green-400">活動内容</h4>
+                  <button type="button" @click="addSchedule(evForm)" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded">+ 追加</button>
+                </div>
+                <div v-for="(sched, idx) in evForm.schedules" :key="idx" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative space-y-3">
+                  <button type="button" @click="removeSchedule(evForm, idx)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500">&times;</button>
+                  
+                  <div>
+                    <label class="block text-[10px] text-gray-500 mb-1">場所</label>
+                    <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 text-sm"><option value="NEW">＋ 新しい場所</option><option v-for="loc in locationMaster" :value="loc.name">{{ loc.name }}</option></select>
+                  </div>
+                  
+                  <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" placeholder="場所名" class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 text-sm"><input v-model="sched.newLocationUrl" placeholder="MAP URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 text-sm"></div>
+                  
+                  <div class="flex space-x-3">
+                    <div class="flex-1"><label class="block text-[10px] text-gray-500 mb-1">開始</label><input v-model="sched.startTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 text-sm"></div>
+                    <div class="flex-1"><label class="block text-[10px] text-gray-500 mb-1">終了</label><input v-model="sched.endTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 text-sm"></div>
+                  </div>
               
               <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
                 <div class="flex justify-between items-center border-b border-gray-700 pb-1">
@@ -460,7 +488,22 @@
         const formatDate = (dStr) => { const d = new Date(dStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
         const formatTime = (t) => t ? t.substring(0, 5) : '';
         const getUserRole = (id) => { const u = allUsers.value.find(u => u.id === id); return u ? u.role : ''; };
-        const sortedEvents = computed(() => [...events.value].sort((a,b) => new Date(a.date) - new Date(b.date)));
+        
+        const showPastEvents = ref(false);
+        const sortedEvents = computed(() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          let filtered = events.value;
+          if (!showPastEvents.value) {
+            filtered = events.value.filter(e => {
+              const evDate = new Date(e.date);
+              evDate.setHours(0, 0, 0, 0);
+              return evDate >= today;
+            });
+          }
+          return [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
+        });
+
         const availableCars = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value && (['可', '現地直行', '配車免除'].includes(r.carStatus) || r.isDummy)));
         const unassignedPassengers = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value && r.status === '参加' && !r.isDummy && !r.assignTo));
         const getPassengersInCar = (carId, eid) => attendanceRecords.value.filter(r => r.eventId === eid && r.assignTo === carId);
@@ -557,7 +600,7 @@
         onMounted(() => { initLiff(); });
 
         return {
-          appState, isDashboardLoaded, loadingMessage, loadingProgress, profile, currentTab, globalEventId, myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, locationMaster, departureMaster, itemMaster, customAlert, regForm, evForm, newMember, dummyForm, isCreating, isRegistering, isEditing, showAlert, closeAlert, formatDate, formatTime, getUserRole, sortedEvents, getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, directorStats, directorLists, availableCars, unassignedPassengers, getVehicleDisplayName, getPassengersInCar, addSchedule, removeSchedule, submitEvent, shareType, selectedShareEvents, customShareText, shareToLine, selectedPassengers, targetVehicleId, executeAllocation, unassign, resizeTextarea, toggleSelection, toggleCarExemption, getRecord
+          appState, isDashboardLoaded, loadingMessage, loadingProgress, profile, currentTab, globalEventId, myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, locationMaster, departureMaster, itemMaster, customAlert, showPastEvents, regForm, evForm, newMember, dummyForm, isCreating, isRegistering, isEditing, showAlert, closeAlert, formatDate, formatTime, getUserRole, sortedEvents, getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, directorStats, directorLists, availableCars, unassignedPassengers, getVehicleDisplayName, getPassengersInCar, addSchedule, removeSchedule, submitEvent, shareType, selectedShareEvents, customShareText, shareToLine, selectedPassengers, targetVehicleId, executeAllocation, unassign, resizeTextarea, toggleSelection, toggleCarExemption, getRecord
         };
       }
     }).mount('#app');
