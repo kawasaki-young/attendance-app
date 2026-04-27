@@ -593,6 +593,7 @@
 
         const toggleEventType = (form, t) => { if (form.types.includes(t)) { form.types = form.types.filter(item => item !== t); } else { form.types.push(t); } };
         
+        // ★真っ黒エラーの原因だった追加関数
         const toggleScheduleGrade = (sched, g) => {
           if (!sched.grades) sched.grades = [];
           if (sched.grades.includes('全学年')) { sched.grades = []; }
@@ -991,7 +992,7 @@
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
-          visibleTabs, toggleEventType, toggleGrade, autoResize, toggleCarExemption, 
+          visibleTabs, toggleEventType, toggleScheduleGrade, autoResize, toggleCarExemption, 
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           newMember, isSaving, isSubmittingEvent, addFamilyMember, deleteFamilyMember,
