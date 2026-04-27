@@ -244,7 +244,7 @@
                   <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【予定】</span>
                   <div class="flex-1 min-w-0 space-y-1">
                     <div v-for="(s, idx) in event.schedules" :key="idx" class="leading-snug">
-                      <p>・<span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span></p>
+                      <p>・<span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span><span v-if="s.grades && s.grades.length > 0" class="text-green-400 font-bold ml-1">【対象: {{ s.grades.join(', ') }}】</span></p>
                     </div>
                     <div class="flex flex-wrap gap-2 mt-1">
                       <a v-for="(url, i) in getUniqueUrls(event.schedules)" :key="i" :href="url" target="_blank" class="text-[10px] text-blue-400 underline border border-gray-700 px-1 rounded">📍MAP{{getUniqueUrls(event.schedules).length > 1 ? i+1 : ''}}</a>
@@ -449,18 +449,19 @@
                   <button type="button" @click="addSchedule(evForm)" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded hover:bg-green-800">+ 追加</button>
                 </div>
                 
-                <div class="mb-3">
-                  <label class="block text-[10px] font-bold text-gray-400 mb-1">対象学年 (複数選択可)</label>
-                  <div class="flex flex-wrap gap-2">
-                    <label v-for="g in availableGrades" :key="g" class="px-3 py-1 border border-gray-700 rounded-full text-[10px] cursor-pointer transition" :class="evForm.grades.includes(g) ? 'bg-green-500 text-ky-black font-bold' : 'bg-[#222222] text-gray-400'">
-                      <input type="checkbox" :value="g" v-model="evForm.grades" class="hidden"> {{ g }}
-                    </label>
-                  </div>
-                </div>
-
                 <div v-for="(sched, index) in evForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
                   <button v-if="evForm.schedules.length > 1" type="button" @click="removeSchedule(evForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
                   <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
+
+                  <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1">対象学年 (複数選択可)</label>
+                    <div class="flex flex-wrap gap-2">
+                      <label v-for="g in availableGrades" :key="g" class="px-3 py-1 border border-gray-700 rounded-full text-[10px] cursor-pointer transition" :class="sched.grades.includes(g) ? 'bg-green-500 text-ky-black font-bold' : 'bg-[#222222] text-gray-400'">
+                        <input type="checkbox" :value="g" v-model="sched.grades" class="hidden"> {{ g }}
+                      </label>
+                    </div>
+                  </div>
+
                   <div class="space-y-3">
                     <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
                     <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
@@ -522,18 +523,19 @@
                   <button type="button" @click="addSchedule(editForm)" class="text-[10px] bg-blue-900 text-blue-300 px-2 py-1 rounded hover:bg-blue-800">+ 追加</button>
                 </div>
 
-                <div class="mb-3">
-                  <label class="block text-[10px] font-bold text-gray-400 mb-1">対象学年 (複数選択可)</label>
-                  <div class="flex flex-wrap gap-2">
-                    <label v-for="g in availableGrades" :key="g" class="px-3 py-1 border border-gray-700 rounded-full text-[10px] cursor-pointer transition" :class="editForm.grades.includes(g) ? 'bg-blue-500 text-white font-bold' : 'bg-[#222222] text-gray-400'">
-                      <input type="checkbox" :value="g" v-model="editForm.grades" class="hidden"> {{ g }}
-                    </label>
-                  </div>
-                </div>
-
                 <div v-for="(sched, index) in editForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
                   <button v-if="editForm.schedules.length > 1" type="button" @click="removeSchedule(editForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
                   <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
+
+                  <div class="mb-3">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1">対象学年 (複数選択可)</label>
+                    <div class="flex flex-wrap gap-2">
+                      <label v-for="g in availableGrades" :key="g" class="px-3 py-1 border border-gray-700 rounded-full text-[10px] cursor-pointer transition" :class="sched.grades.includes(g) ? 'bg-blue-500 text-white font-bold' : 'bg-[#222222] text-gray-400'">
+                        <input type="checkbox" :value="g" v-model="sched.grades" class="hidden"> {{ g }}
+                      </label>
+                    </div>
+                  </div>
+
                   <div class="space-y-3">
                     <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
                     <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
@@ -645,12 +647,17 @@
         const isAllocating = ref(false);
         const dummyForm = reactive({ type: 'チームバス', capacity: '' });
 
-        const evForm = reactive({ types: ['練習'], grades: [], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gatherOffset: 5, schedules: [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }], selectedItems: [], newItem: '', comment: '', notes: '' });
+        const availableTypes = ['練習', 'OP戦', '公式戦', '合宿', 'その他'];
+        const availableGrades = ['3年', '2年', '1年', '全学年'];
+
+        const resizeTextarea = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };
+
+        const evForm = reactive({ types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gatherOffset: 5, schedules: [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '', grades: ['全学年'] }], selectedItems: [], newItem: '', comment: '', notes: '' });
         const isCreating = ref(false);
 
         const isEditing = ref(false);
         const isSavingEdit = ref(false);
-        const editForm = reactive({ eventId: '', types: ['練習'], grades: [], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
+        const editForm = reactive({ eventId: '', types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
         const customAlert = reactive({ show: false, message: '' });
         const showAlert = (msg) => { customAlert.message = msg; customAlert.show = true; };
@@ -784,7 +791,6 @@
           
           targetEvents.forEach(e => {
             text += `◆${formatDate(e.date)} ${e.title}\n`;
-            if (e.grades && e.grades !== '') text += `【対象: ${e.grades}】\n`; // ★ 学年自動反映
             if (e.departureTime || e.gatherTime) {
               const depLoc = e.depLocation ? `@${e.depLocation}` : '';
               const depTime = e.departureTime ? `${formatTime(e.departureTime)}出発` : '';
@@ -799,7 +805,8 @@
               e.schedules.forEach(s => {
                 const timeStr = s.endTime ? `${formatTime(s.startTime)}〜${formatTime(s.endTime)}` : (s.startTime ? `${formatTime(s.startTime)}〜` : '');
                 const locStr = s.location ? `@${s.location}` : '';
-                text += `・${timeStr}${locStr}\n`;
+                const gradeStr = (s.grades && s.grades.length > 0) ? ` 【対象: ${s.grades.join(', ')}】` : '';
+                text += `・${timeStr}${locStr}${gradeStr}\n`;
               });
               const uniqueUrls = getUniqueUrls(e.schedules);
               uniqueUrls.forEach((url, i) => { text += `📍MAP${uniqueUrls.length > 1 ? i+1 : ''}: ${url}\n`; });
@@ -939,7 +946,6 @@
           const match = ev.title.match(/\((.*?)\)$/);
           editForm.eventId = ev.id; 
           editForm.types = ev.type ? ev.type.split('・') : ['練習']; 
-          editForm.grades = ev.grades ? ev.grades.split(', ') : [];
           editForm.detail = match ? match[1] : '';
           const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
           
@@ -947,12 +953,16 @@
           editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
           
           if(ev.schedules && ev.schedules.length > 0) {
-            editForm.schedules = ev.schedules.map(s => ({
-              startTime: formatTimeForInput(s.startTime), endTime: formatTimeForInput(s.endTime),
-              locationSelect: s.location || '', newLocationName: '', newLocationUrl: ''
-            }));
+            editForm.schedules = ev.schedules.map(s => {
+              let grades = ['全学年'];
+              if (s.grades && s.grades.length > 0) grades = s.grades;
+              return {
+                startTime: formatTimeForInput(s.startTime), endTime: formatTimeForInput(s.endTime),
+                locationSelect: s.location || '', newLocationName: '', newLocationUrl: '', grades: grades
+              };
+            });
           } else {
-            editForm.schedules = [{ startTime: formatTimeForInput(ev.startTime), endTime: '', locationSelect: ev.location || '', newLocationName: '', newLocationUrl: '' }];
+            editForm.schedules = [{ startTime: formatTimeForInput(ev.startTime), endTime: '', locationSelect: ev.location || '', newLocationName: '', newLocationUrl: '', grades: ['全学年'] }];
           }
           
           editForm.selectedItems = ev.items ? ev.items.split('、') : []; editForm.comment = ev.comment || ''; editForm.notes = ev.notes || '';
@@ -963,7 +973,7 @@
         const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
         const getDepLocUrl = (name) => { const dep = departureMaster.value.find(d => d.name === name); return dep ? dep.url : ''; };
         
-        const addSchedule = (targetForm) => { targetForm.schedules.push({ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }); };
+        cconst addSchedule = (targetForm) => { targetForm.schedules.push({ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '', grades: ['全学年'] }); };
         const removeSchedule = (targetForm, index) => { targetForm.schedules.splice(index, 1); };
 
         const formatSchedulesForGAS = (schedulesArray) => {
@@ -971,7 +981,7 @@
             const isNew = s.locationSelect === 'NEW';
             const locName = isNew ? s.newLocationName : s.locationSelect;
             const locUrl = isNew ? s.newLocationUrl : getLocUrl(s.locationSelect);
-            return { startTime: s.startTime, endTime: s.endTime, location: locName, mapUrl: locUrl, isNewLocation: isNew };
+            return { startTime: s.startTime, endTime: s.endTime, location: locName, mapUrl: locUrl, isNewLocation: isNew, grades: s.grades || ['全学年'] };
           });
         };
 
@@ -985,7 +995,7 @@
           
           const payload = {
             action: 'updateEvent', data: {
-              eventId: editForm.eventId, types: editForm.types, grades: editForm.grades, eventTitle: fullTitle, date: editForm.date,
+              eventId: editForm.eventId, types: editForm.types, eventTitle: fullTitle, date: editForm.date,
               depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
               schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
@@ -997,100 +1007,7 @@
             showAlert('修正を保存しました'); 
           } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
         };
-        const addFamilyMember = async () => {
-          if (!newMember.name) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); 
-            newMember.name = ''; 
-            await fetchDashboardData(); 
-            showAlert('追加しました！'); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました。'); }
-        };
 
-        const deleteFamilyMember = async (memberId, memberName) => {
-          if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
-            await fetchDashboardData();
-            showAlert(`${memberName} を削除しました。`); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
-        };
-        const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
-        const directorStats = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
-          return { total: participants.length, players: participants.filter(p => getUserRole(p.userId) === '選手').length, parents: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督').length, family: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB').length };
-        });
-        const directorLists = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
-          return { players: participants.filter(p => getUserRole(p.userId) === '選手'), adults: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督' || getUserRole(p.userId) === 'OB').map(p => ({...p, role: getUserRole(p.userId)})) };
-        });
-        
-        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy));
-        const activeCars = computed(() => availableCars.value.filter(c => !c.isExempt)); // 免除されていない車
-        const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && !r.assignTo));
-        
-        const getVehicleDisplayName = (car) => {
-          let cap = 0; let name = '';
-          if (car.isDummy) { name = car.name; cap = Number(car.capacity) || 0; } else { const user = allUsers.value.find(u => u.id === car.userId); name = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; cap = user ? Number(user.vehicleCapacity) || 0 : 0; }
-          const directLabel = car.carStatus === '現地直行' ? ' 【現地直行】' : '';
-          return `${name}${directLabel} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
-        };
-        const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy));
-
-        const addDummyVehicle = async () => {
-          appState.value = 'loading'; startLoadingProgress();
-          try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); 
-            dummyForm.capacity = ''; 
-            await fetchDashboardData(); 
-            showAlert('手配車両を追加しました！');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
-        };
-
-        const updateDummyVehicle = async (dummy) => {
-          if (!dummy.capacity) { showAlert('定員を入力してください。'); return; }
-          appState.value = 'loading'; startLoadingProgress();
-          try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId, capacity: dummy.capacity } }) });
-            await fetchDashboardData();
-            showAlert(`${dummy.name} の定員を更新しました！`);
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
-        };
-
-        const deleteDummyVehicle = async (dummy) => {
-          if (!confirm(`${dummy.name} の手配を削除しますか？\n※既に配車されているメンバーがいる場合、未配車に戻ります。`)) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId } }) });
-            await fetchDashboardData();
-            showAlert(`${dummy.name} の手配を削除しました。`);
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
-        };
-        const executeAllocation = async () => {
-          appState.value = 'loading'; startLoadingProgress();
-          try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveAllocation', data: { eventId: globalEventId.value, assignments: selectedPassengers.value, targetVehicleId: targetVehicleId.value } }) });
-            selectedPassengers.value = [];
-            await fetchDashboardData();
-            showAlert('配車の割り当てが完了しました！');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
-        };
-        const unassign = async (userId) => {
-          if(!confirm('このメンバーの配車を解除して、未定に戻しますか？')) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) });
-            await fetchDashboardData();
-            showAlert('配車を解除し、乗車待ちに戻しました。');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
-        };
-        const computedGatherTime = computed(() => {
-          if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        });
-        const addNewItem = (targetForm) => { if (targetForm.newItem && !itemMaster.value.includes(targetForm.newItem)) { itemMaster.value.push(targetForm.newItem); targetForm.selectedItems.push(targetForm.newItem); targetForm.newItem = ''; } };
-        
         const submitEvent = async () => {
           appState.value = 'loading'; startLoadingProgress();
           const isNewDepLoc = evForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? evForm.newDepLocationName : evForm.depLocationSelect; const depLocUrl = isNewDepLoc ? evForm.newDepLocationUrl : getDepLocUrl(evForm.depLocationSelect);
@@ -1101,7 +1018,7 @@
           
           const payload = {
             action: 'createEvent', data: {
-              types: evForm.types, grades: evForm.grades, eventTitle: fullTitle, date: evForm.date, 
+              types: evForm.types, eventTitle: fullTitle, date: evForm.date, 
               depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
               schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
             }
@@ -1109,8 +1026,8 @@
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
             evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
-            evForm.types = ['練習']; evForm.grades = [];
-            evForm.schedules = [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
+            evForm.types = ['練習']; 
+            evForm.schedules = [{ startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '', grades: ['全学年'] }];
             evForm.selectedItems = []; evForm.comment = ''; evForm.notes = '';
             currentTab.value = 'events'; 
             await fetchDashboardData();
@@ -1136,7 +1053,8 @@
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           availableTypes, availableGrades,
-          regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
+          regForm, availableTypes, availableGrades, resizeTextarea,
+          availableFamilies, isRegistering, submitRegistration, checkUser,
           initLiff, formatDate, formatTime, getUserRole, getUniqueUrls,
           getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, 
           getCarComment, updateCarComment, toggleExemption,
