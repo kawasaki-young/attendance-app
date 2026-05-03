@@ -9,484 +9,563 @@
   <title>川崎ヤング 出欠・配車管理</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { theme: { extend: { colors: { ky: { black: '#000000', white: '#FFFFFF', pink: '#FF5FE3', line: '#06C755' } } } } }
+    tailwind.config = { 
+      darkMode: 'class', // ダークモードをクラス切り替えに設定
+      theme: { 
+        extend: { 
+          colors: { 
+            ky: { 
+              black: '#000000', 
+              white: '#FFFFFF', 
+              lightpink: '#F7ADC3', // ライトモード用ピンク
+              darkpink: '#FF5FE3',  // ダークモード用ピンク
+              line: '#06C755' 
+            } 
+          } 
+        } 
+      } 
+    }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.prod.js"></script>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     [v-cloak] { display: none !important; }
-    body { background-color: #000000; color: #FFFFFF; -webkit-tap-highlight-color: transparent; }
+    body { -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+    /* カレンダーアイコンの色反転設定 */
+    .dark input[type="date"]::-webkit-calendar-picker-indicator, 
+    .dark input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     body.modal-open { overflow: hidden; }
   </style>
 </head>
-<body class="bg-ky-black text-ky-white font-sans antialiased" :class="{'modal-open': isEditing}">
+<body class="bg-gray-50 text-gray-800 dark:bg-ky-black dark:text-ky-white font-sans antialiased" :class="{'modal-open': isEditing}">
   <div id="app" v-cloak>
-    <header class="bg-ky-black p-4 sticky top-0 z-50 border-b border-ky-pink shadow-[0_4px_15px_rgba(255,95,227,0.1)]">
-      <h1 class="text-base font-bold flex items-center tracking-wider text-ky-white">
-        <img src="./logo.webp" alt="ロゴ" class="w-6 h-6 object-contain mr-2">
-        川崎ヤング 出欠/配車 システム
+    <header class="bg-white dark:bg-ky-black p-4 sticky top-0 z-50 border-b border-ky-lightpink dark:border-ky-darkpink shadow-sm dark:shadow-[0_4px_15px_rgba(255,95,227,0.1)] flex justify-between items-center">
+      <h1 class="text-lg font-bold flex items-center tracking-wider text-gray-900 dark:text-ky-white">
+        <img src="./logo.webp" alt="ロゴ" class="w-7 h-7 object-contain mr-2">
+        川崎ヤング 出欠/配車
       </h1>
+      <!-- ダークモード切り替えスイッチ -->
+      <button @click="toggleDarkMode" class="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-xl shadow-inner transition">
+        {{ isDarkMode ? '🌙' : '☀️' }}
+      </button>
     </header>
 
     <div v-if="customAlert.show" class="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center px-4">
-      <div class="bg-[#111111] border border-ky-pink rounded-xl p-6 w-full max-w-xs shadow-[0_0_20px_rgba(255,95,227,0.15)] text-center transform transition-all">
-        <div class="flex justify-center mb-4"><img src="./logo.webp" alt="川崎ヤング" class="w-16 h-16 object-contain"></div>
-        <h3 class="text-base font-bold text-white mb-2">川崎ヤング</h3>
-        <p class="text-sm text-gray-300 mb-6 whitespace-pre-wrap">{{ customAlert.message }}</p>
-        <button @click="closeAlert" class="w-full bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 text-sm">OK</button>
+      <div class="bg-white dark:bg-[#111111] border border-ky-lightpink dark:border-ky-darkpink rounded-xl p-8 w-full max-w-sm shadow-xl text-center transform transition-all">
+        <div class="flex justify-center mb-4"><img src="./logo.webp" alt="川崎ヤング" class="w-20 h-20 object-contain"></div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">川崎ヤング</h3>
+        <p class="text-base text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-wrap">{{ customAlert.message }}</p>
+        <button @click="closeAlert" class="w-full bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold py-4 rounded-xl shadow-md transition hover:opacity-80 text-base">OK</button>
       </div>
     </div>
 
-    <main class="container mx-auto px-4 py-6 pb-24 relative">
+    <main class="container mx-auto px-4 py-6 pb-28 relative">
       
-      <div v-if="appState === 'error'" class="bg-red-900 border border-red-500 rounded-xl p-6 text-white mb-6">
-        <h2 class="font-bold text-lg mb-2">⚠️ システムエラー</h2>
-        <p class="text-sm">{{ errorMessage }}</p>
-        <button @click="initLiff" class="mt-4 bg-white text-red-900 px-4 py-2 rounded font-bold text-sm">再読み込み</button>
+      <div v-if="appState === 'error'" class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-500 rounded-xl p-6 text-red-800 dark:text-white mb-6 shadow-md">
+        <h2 class="font-bold text-xl mb-2">⚠️ システムエラー</h2>
+        <p class="text-base">{{ errorMessage }}</p>
+        <button @click="initLiff" class="mt-4 bg-white text-red-900 px-5 py-3 rounded-lg font-bold text-base shadow">再読み込み</button>
       </div>
 
-      <div v-if="appState === 'loading' && !isDashboardLoaded" class="flex flex-col items-center justify-center h-64 max-w-sm mx-auto w-full px-8">
-        <img src="./logo.webp" alt="ロゴ" class="w-16 h-16 object-contain mb-6 animate-pulse">
-        <div class="w-full bg-[#1a1a1a] rounded-full h-3 mb-2 overflow-hidden border border-gray-700 relative shadow-inner">
-          <div class="bg-ky-pink h-3 rounded-full transition-all duration-200 ease-out shadow-[0_0_10px_rgba(255,95,227,0.6)]" :style="{ width: loadingProgress + '%' }"></div>
+      <div v-if="appState === 'loading' && !isDashboardLoaded" class="flex flex-col items-center justify-center h-64 max-w-md mx-auto w-full px-8">
+        <img src="./logo.webp" alt="ロゴ" class="w-20 h-20 object-contain mb-6 animate-pulse">
+        <div class="w-full bg-gray-200 dark:bg-[#1a1a1a] rounded-full h-4 mb-3 overflow-hidden border border-gray-300 dark:border-gray-700 relative shadow-inner">
+          <div class="bg-ky-lightpink dark:bg-ky-darkpink h-4 rounded-full transition-all duration-200 ease-out" :style="{ width: loadingProgress + '%' }"></div>
         </div>
-        <div class="flex justify-between w-full text-xs font-medium tracking-wider">
-          <span class="text-ky-pink">{{ loadingMessage }}</span>
-          <span class="text-white font-bold">{{ loadingProgress }}%</span>
+        <div class="flex justify-between w-full text-sm font-medium tracking-wider">
+          <span class="text-gray-600 dark:text-ky-darkpink">{{ loadingMessage }}</span>
+          <span class="text-gray-900 dark:text-white font-bold">{{ loadingProgress }}%</span>
         </div>
       </div>
 
-      <div v-if="appState === 'loading' && isDashboardLoaded" class="fixed inset-0 bg-black/80 z-[110] flex justify-center items-center px-4 backdrop-blur-sm">
-        <div class="bg-[#111111] border border-ky-pink rounded-xl p-8 w-full max-w-xs shadow-[0_0_30px_rgba(255,95,227,0.2)] text-center flex flex-col items-center">
-          <img src="./logo.webp" alt="ロゴ" class="w-16 h-16 object-contain mb-6 animate-pulse">
-          <div class="w-full bg-[#1a1a1a] rounded-full h-3 mb-2 overflow-hidden border border-gray-700 relative shadow-inner">
-            <div class="bg-ky-pink h-3 rounded-full transition-all duration-200 ease-out shadow-[0_0_10px_rgba(255,95,227,0.6)]" :style="{ width: loadingProgress + '%' }"></div>
+      <div v-if="appState === 'loading' && isDashboardLoaded" class="fixed inset-0 bg-black/60 dark:bg-black/80 z-[110] flex justify-center items-center px-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#111111] border border-ky-lightpink dark:border-ky-darkpink rounded-xl p-8 w-full max-w-sm shadow-2xl text-center flex flex-col items-center">
+          <img src="./logo.webp" alt="ロゴ" class="w-20 h-20 object-contain mb-6 animate-pulse">
+          <div class="w-full bg-gray-200 dark:bg-[#1a1a1a] rounded-full h-4 mb-3 overflow-hidden border border-gray-300 dark:border-gray-700 relative shadow-inner">
+            <div class="bg-ky-lightpink dark:bg-ky-darkpink h-4 rounded-full transition-all duration-200 ease-out" :style="{ width: loadingProgress + '%' }"></div>
           </div>
-          <div class="flex justify-between w-full text-xs font-medium tracking-wider">
-            <span class="text-ky-pink">{{ loadingMessage }}</span>
-            <span class="text-white font-bold">{{ loadingProgress }}%</span>
+          <div class="flex justify-between w-full text-sm font-medium tracking-wider">
+            <span class="text-gray-600 dark:text-ky-darkpink">{{ loadingMessage }}</span>
+            <span class="text-gray-900 dark:text-white font-bold">{{ loadingProgress }}%</span>
           </div>
         </div>
       </div>
 
-      <div v-if="appState === 'registering'" class="max-w-md mx-auto bg-[#111111] rounded-xl p-6 border border-ky-pink/30 shadow-lg">
-        <h2 class="text-xl font-bold text-ky-pink mb-4 text-center">新規ユーザー登録</h2>
-        <p class="text-xs text-gray-400 mb-6 text-center">最初のプロフィール設定をお願いします。</p>
-        <form @submit.prevent="submitRegistration" class="space-y-5">
+      <div v-if="appState === 'registering'" class="max-w-lg mx-auto bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border border-gray-200 dark:border-ky-darkpink/30 shadow-xl">
+        <h2 class="text-2xl font-bold text-ky-lightpink dark:text-ky-darkpink mb-4 text-center">新規ユーザー登録</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 text-center leading-relaxed">川崎ヤングの管理システムへようこそ。<br>最初のプロフィール設定をお願いします。</p>
+        <form @submit.prevent="submitRegistration" class="space-y-6">
           <div>
-            <label class="block text-sm font-bold text-gray-300 mb-1">氏名 (フルネーム) <span class="text-red-500">*</span></label>
-            <input v-model="regForm.name" type="text" required placeholder="例: 山田 太郎" class="w-full bg-[#1a1a1a] text-white px-4 py-3 rounded border border-gray-700 outline-none focus:border-ky-pink text-sm">
+            <label class="block text-base font-bold text-gray-800 dark:text-gray-300 mb-2">氏名 (フルネーム) <span class="text-red-500">*</span></label>
+            <input v-model="regForm.name" type="text" required placeholder="例: 山田 太郎" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-base">
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-300 mb-1">チームでの役割 <span class="text-red-500">*</span></label>
-            <select v-model="regForm.role" required class="w-full bg-[#1a1a1a] text-white px-4 py-3 rounded border border-gray-700 outline-none focus:border-ky-pink text-sm">
+            <label class="block text-base font-bold text-gray-800 dark:text-gray-300 mb-2">チームでの役割 <span class="text-red-500">*</span></label>
+            <select v-model="regForm.role" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-base">
               <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手">選手</option><option value="家族">家族(兄弟など)</option>
             </select>
           </div>
           <div v-if="['保護者(父)', '保護者(母)', '監督', 'コーチ', 'OB'].includes(regForm.role)">
-            <label class="block text-sm font-bold text-ky-pink mb-1 mt-4">車出し（配車）は可能ですか？</label>
-            <div class="space-y-3 bg-[#1a1a1a] p-4 rounded border border-gray-700">
-              <input v-model="regForm.vehicleName" type="text" placeholder="車両の呼び名 (例: 山田父号)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
-              <input v-model="regForm.vehicleType" type="text" placeholder="車種 (例: アルファード, ノア等)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
-              <input v-model="regForm.vehicleCapacity" type="number" placeholder="乗車定員 (運転手含む)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm">
-              <p class="text-[10px] text-gray-400">※車出しをしない場合は空欄でOKです。</p>
+            <label class="block text-base font-bold text-ky-lightpink dark:text-ky-darkpink mb-2 mt-6">車出し（配車）は可能ですか？</label>
+            <div class="space-y-4 bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-300 dark:border-gray-700">
+              <input v-model="regForm.vehicleName" type="text" placeholder="車両の呼び名 (例: 山田父号)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 outline-none text-base">
+              <input v-model="regForm.vehicleType" type="text" placeholder="車種 (例: アルファード, ノア等)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 outline-none text-base">
+              <input v-model="regForm.vehicleCapacity" type="number" placeholder="乗車定員 (運転手含む)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 outline-none text-base">
+              <p class="text-xs text-gray-500 dark:text-gray-400">※車出しをしない場合は空欄でOKです。</p>
             </div>
           </div>
-          <div v-if="['保護者(父)', '保護者(母)', 'コーチ'].includes(regForm.role)" class="bg-gray-800/30 p-4 rounded border border-gray-700 mt-4 mb-2">
-            <label class="block text-sm font-bold text-ky-pink mb-1">所属選手（1人目）の登録</label>
-            <input v-model="regForm.playerName" type="text" placeholder="選手の氏名 (フルネーム)" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none focus:border-ky-pink text-sm">
+          <div v-if="['保護者(父)', '保護者(母)', 'コーチ'].includes(regForm.role)" class="bg-blue-50 dark:bg-gray-800/30 p-5 rounded-xl border border-blue-200 dark:border-gray-700 mt-6 mb-2">
+            <label class="block text-base font-bold text-ky-lightpink dark:text-ky-darkpink mb-2">所属選手（1人目）の登録</label>
+            <input v-model="regForm.playerName" type="text" placeholder="選手の氏名 (フルネーム)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-base">
           </div>
-          <div class="pt-4 border-t border-gray-800 mt-2">
-            <label class="block text-sm font-bold text-gray-300 mb-2">すでに他のご家族が登録済みですか？</label>
-            <div class="flex space-x-2 mb-3">
-              <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm transition" :class="regForm.hasFamily === 'no' ? 'bg-ky-pink text-ky-black font-bold' : 'text-gray-400'"><input type="radio" v-model="regForm.hasFamily" value="no" class="hidden"> 新規で登録</label>
-              <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm transition" :class="regForm.hasFamily === 'yes' ? 'bg-ky-pink text-ky-black font-bold' : 'text-gray-400'"><input type="radio" v-model="regForm.hasFamily" value="yes" class="hidden"> 家族に合流</label>
+          <div class="pt-6 border-t border-gray-200 dark:border-gray-800 mt-4">
+            <label class="block text-base font-bold text-gray-800 dark:text-gray-300 mb-3">すでに他のご家族が登録済みですか？</label>
+            <div class="flex space-x-3 mb-4">
+              <label class="flex-1 text-center py-3 border border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer text-base font-medium transition" :class="regForm.hasFamily === 'no' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 shadow-md' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-transparent'"><input type="radio" v-model="regForm.hasFamily" value="no" class="hidden"> 新規で登録</label>
+              <label class="flex-1 text-center py-3 border border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer text-base font-medium transition" :class="regForm.hasFamily === 'yes' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 shadow-md' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-transparent'"><input type="radio" v-model="regForm.hasFamily" value="yes" class="hidden"> 家族に合流</label>
             </div>
             <div v-if="regForm.hasFamily === 'yes'">
-              <select v-model="regForm.selectedFamilyId" required class="w-full bg-[#1a1a1a] text-white px-4 py-3 rounded border border-gray-700 outline-none text-sm">
-                <option disabled value="">合流する家族を選択</option>
+              <select v-model="regForm.selectedFamilyId" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base">
+                <option disabled value="">合流する家族を選択してください</option>
                 <option v-for="fam in availableFamilies" :key="fam.familyId" :value="fam.familyId">{{ fam.name }} の家族</option>
               </select>
             </div>
           </div>
-          <button type="submit" :disabled="isRegistering" class="w-full bg-ky-pink text-ky-black font-bold py-4 rounded-xl shadow-md mt-6 transition disabled:opacity-50 text-sm">
+          <button type="submit" :disabled="isRegistering" class="w-full bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-extrabold py-5 rounded-2xl shadow-lg mt-8 transition hover:opacity-90 disabled:opacity-50 text-lg">
             {{ isRegistering ? '登録処理中...' : '登録する' }}
           </button>
         </form>
       </div>
 
       <div v-if="appState === 'dashboard' || (appState === 'loading' && isDashboardLoaded)">
-        <div class="flex flex-wrap gap-2 mb-6 bg-[#1a1a1a] p-2 rounded-xl">
+        <div class="flex flex-wrap gap-2 mb-8 bg-white dark:bg-[#1a1a1a] p-3 rounded-2xl shadow-sm dark:shadow-none border border-gray-200 dark:border-transparent">
           <button v-for="tab in visibleTabs" :key="tab.id" @click="currentTab = tab.id"
             :class="[
               currentTab === tab.id ? tab.activeClass : tab.inactiveClass,
-              'flex-grow px-1 py-3 rounded-lg text-xs transition min-w-[20%]'
+              'flex-grow px-2 py-3 rounded-xl text-sm font-bold transition min-w-[20%] text-center'
             ]">
             {{ tab.label }}
           </button>
         </div>
 
-        <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-6">
-          <div class="flex justify-between items-end mb-2">
-            <label class="block text-xs font-bold text-ky-pink">確認するイベントを選択</label>
-            <button @click="showPastEvents = !showPastEvents" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded hover:bg-gray-800 transition">
+        <div v-if="['director', 'allocation', 'view_allocation'].includes(currentTab)" class="mb-8">
+          <div class="flex justify-between items-end mb-3">
+            <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink">確認するイベントを選択</label>
+            <button @click="showPastEvents = !showPastEvents" class="text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition shadow-sm">
               {{ showPastEvents ? '過去を隠す' : '過去も表示' }}
             </button>
           </div>
-          <select v-model="globalEventId" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-ky-pink outline-none text-sm">
+          <select v-model="globalEventId" class="w-full px-5 py-4 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 shadow-sm focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink outline-none text-base font-medium">
             <option disabled value="">イベントを選択してください</option>
             <option v-for="event in sortedEvents" :key="event.id" :value="event.id">{{ formatDate(event.date) }} {{ event.title }}</option>
           </select>
         </div>
 
-        <div v-if="currentTab === 'share'" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-ky-line shadow-lg shadow-ky-line/10">
+        <div v-if="currentTab === 'share'" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-ky-line shadow-xl">
             <template v-if="myRole === '監督' || myPermission === '運営'">
-              <div class="flex space-x-2 mb-6 bg-[#1a1a1a] p-1 rounded-lg">
-                <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">行事予定の共有</button>
-                <button @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-gray-700 text-white font-bold' : 'text-gray-400'" class="flex-1 py-2 text-xs rounded">配車表の共有</button>
+              <div class="flex space-x-3 mb-8 bg-gray-100 dark:bg-[#1a1a1a] p-2 rounded-xl">
+                <button @click="shareType = 'schedule'" :class="shareType === 'schedule' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-bold shadow-md' : 'text-gray-500 dark:text-gray-400'" class="flex-1 py-3 text-sm rounded-lg transition">行事予定の共有</button>
+                <button @click="shareType = 'allocation'" :class="shareType === 'allocation' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-bold shadow-md' : 'text-gray-500 dark:text-gray-400'" class="flex-1 py-3 text-sm rounded-lg transition">配車表の共有</button>
               </div>
             </template>
             <template v-else>
-              <div class="mb-4 border-b border-gray-800 pb-2"><p class="text-sm font-bold text-ky-line">🚗 配車表のLINE共有</p></div>
+              <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-3"><p class="text-lg font-bold text-ky-line">🚗 配車表のLINE共有</p></div>
             </template>
 
-            <div v-if="shareType === 'schedule'" class="space-y-4">
+            <div v-if="shareType === 'schedule'" class="space-y-6">
               <div class="flex justify-between items-end">
-                <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択 <span class="font-normal">(複数選択可)</span></label>
-                <button @click="showPastEvents = !showPastEvents" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded">
+                <label class="block text-sm font-bold text-ky-line">1. 共有するイベントを選択 <span class="font-normal text-xs text-gray-500">(複数選択可)</span></label>
+                <button @click="showPastEvents = !showPastEvents" class="text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg shadow-sm">
                   {{ showPastEvents ? '過去を隠す' : '過去も表示' }}
                 </button>
               </div>
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 max-h-48 overflow-y-auto space-y-2">
-                <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
-                  <input type="checkbox" :value="event.id" v-model="selectedShareEvents" class="accent-ky-line w-5 h-5">
-                  <span class="text-sm flex-1">{{ formatDate(event.date) }} {{ event.title }}</span>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 max-h-60 overflow-y-auto space-y-3">
+                <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-4 p-3 bg-white dark:bg-[#222222] rounded-lg cursor-pointer border border-transparent shadow-sm hover:border-ky-line/50 transition">
+                  <input type="checkbox" :value="event.id" v-model="selectedShareEvents" class="accent-ky-line w-6 h-6">
+                  <span class="text-base font-medium flex-1 text-gray-800 dark:text-gray-200">{{ formatDate(event.date) }} {{ event.title }}</span>
                 </label>
               </div>
-              <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
-              <textarea v-model="customScheduleText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 focus:border-ky-line outline-none text-xs font-mono leading-relaxed"></textarea>
-              <button @click="shareToLine(customScheduleText)" :disabled="selectedShareEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 text-sm">LINEに送信</button>
+              <label class="block text-sm font-bold text-ky-line pt-2">2. 送信文面の調整・プレビュー</label>
+              <textarea v-model="customScheduleText" rows="12" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-100 px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-ky-line outline-none text-sm font-mono leading-relaxed shadow-inner"></textarea>
+              <button @click="shareToLine(customScheduleText)" :disabled="selectedShareEvents.length === 0" class="w-full bg-ky-line hover:bg-green-600 text-white font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg">LINEに送信</button>
             </div>
 
-            <div v-if="shareType === 'allocation'" class="space-y-4">
+            <div v-if="shareType === 'allocation'" class="space-y-6">
               <div class="flex justify-between items-end">
-                <label class="block text-xs font-bold text-ky-line">1. 共有するイベントを選択 <span class="font-normal">(複数選択可)</span></label>
-                <button @click="showPastEvents = !showPastEvents" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded">
+                <label class="block text-sm font-bold text-ky-line">1. 共有するイベントを選択 <span class="font-normal text-xs text-gray-500">(複数選択可)</span></label>
+                <button @click="showPastEvents = !showPastEvents" class="text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg shadow-sm">
                   {{ showPastEvents ? '過去を隠す' : '過去も表示' }}
                 </button>
               </div>
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 max-h-48 overflow-y-auto space-y-2">
-                <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
-                  <input type="checkbox" :value="event.id" v-model="selectedAllocationEvents" class="accent-ky-line w-5 h-5">
-                  <span class="text-sm flex-1">{{ formatDate(event.date) }} {{ event.title }}</span>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 max-h-60 overflow-y-auto space-y-3">
+                <label v-for="event in sortedEvents" :key="event.id" class="flex items-center space-x-4 p-3 bg-white dark:bg-[#222222] rounded-lg cursor-pointer border border-transparent shadow-sm hover:border-ky-line/50 transition">
+                  <input type="checkbox" :value="event.id" v-model="selectedAllocationEvents" class="accent-ky-line w-6 h-6">
+                  <span class="text-base font-medium flex-1 text-gray-800 dark:text-gray-200">{{ formatDate(event.date) }} {{ event.title }}</span>
                 </label>
               </div>
-              <label class="block text-xs font-bold text-ky-line pt-4">2. 送信文面の調整・プレビュー</label>
-              <textarea v-model="customAllocationText" rows="12" class="w-full bg-[#1a1a1a] text-gray-100 px-3 py-3 rounded-lg border border-gray-500 outline-none text-xs font-mono leading-relaxed"></textarea>
-              <button @click="shareToLine(customAllocationText)" :disabled="selectedAllocationEvents.length === 0" class="w-full bg-ky-line hover:bg-green-500 text-white font-extrabold py-4 rounded-xl transition disabled:opacity-50 text-sm">LINEに送信</button>
+              <label class="block text-sm font-bold text-ky-line pt-2">2. 送信文面の調整・プレビュー</label>
+              <textarea v-model="customAllocationText" rows="12" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-800 dark:text-gray-100 px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-500 focus:ring-2 focus:ring-ky-line outline-none text-sm font-mono leading-relaxed shadow-inner"></textarea>
+              <button @click="shareToLine(customAllocationText)" :disabled="selectedAllocationEvents.length === 0" class="w-full bg-ky-line hover:bg-green-600 text-white font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg">LINEに送信</button>
             </div>
           </div>
         </div>
 
-        <div v-if="currentTab === 'events'" class="space-y-6">
-          <div class="flex justify-end mb-2">
-            <button @click="showPastEvents = !showPastEvents" class="text-[10px] text-gray-400 border border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition">
+        <div v-if="currentTab === 'events'" class="space-y-8">
+          <div class="flex justify-end mb-4">
+            <button @click="showPastEvents = !showPastEvents" class="text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
               {{ showPastEvents ? '▼ 過去の予定を隠す' : '▶︎ 過去の予定も表示' }}
             </button>
           </div>
-          <div v-if="sortedEvents.length === 0" class="text-center py-10 text-gray-500">表示できる予定がありません。</div>
-          <div v-for="event in sortedEvents" :key="event.id" class="bg-[#111111] rounded-xl border border-gray-800 overflow-hidden shadow-lg">
-            <div class="bg-gradient-to-r from-gray-900 to-[#1a1a1a] p-4 border-b border-ky-pink/30">
-              <h3 class="text-lg font-bold text-ky-white mb-2">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
-              <div class="space-y-2 text-sm text-gray-300">
+          <div v-if="sortedEvents.length === 0" class="text-center py-12 text-gray-500 font-medium text-lg">表示できる予定がありません。</div>
+          <div v-for="event in sortedEvents" :key="event.id" class="bg-white dark:bg-[#111111] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg">
+            <div class="bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-[#1a1a1a] p-5 md:p-6 border-b border-ky-lightpink dark:border-ky-darkpink/30">
+              <h3 class="text-xl font-bold text-gray-900 dark:text-ky-white mb-4">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
+              <div class="space-y-3 text-base text-gray-700 dark:text-gray-300">
                 <div v-if="event.departureTime || event.gatherTime" class="flex items-start">
-                  <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【集合】</span>
+                  <span class="font-bold text-ky-lightpink dark:text-ky-darkpink flex-shrink-0 whitespace-nowrap mr-3">【集合】</span>
                   <div class="flex-1 min-w-0">
-                    <p><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-else-if="event.gatherTime">{{ formatTime(event.gatherTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span></p>
-                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-[10px] text-blue-400 underline block mt-1">出発場所MAP</a>
+                    <p class="font-medium"><span v-if="event.departureTime">{{ formatTime(event.departureTime) }} </span><span v-else-if="event.gatherTime">{{ formatTime(event.gatherTime) }} </span><span v-if="event.depLocation">@{{ event.depLocation }}</span></p>
+                    <a v-if="event.depMapUrl" :href="event.depMapUrl" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 underline block mt-1">出発場所MAP</a>
                   </div>
                 </div>
                 <div v-if="event.schedules && event.schedules.length > 0" class="flex items-start">
-                  <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【予定】</span>
-                  <div class="flex-1 min-w-0 space-y-1">
-                    <div v-for="(s, idx) in event.schedules" :key="idx" class="leading-snug">
-                      <p class="flex items-center flex-wrap gap-1 mb-1">
-                        <span class="text-gray-300">・</span>
-                        <span class="bg-ky-pink/20 border border-ky-pink text-ky-pink text-[10px] px-1.5 py-0.5 rounded">{{ s.grades && s.grades.length > 0 ? s.grades.join(', ') : '全学年' }}</span>
-                        <span><span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span></span>
+                  <span class="font-bold text-ky-lightpink dark:text-ky-darkpink flex-shrink-0 whitespace-nowrap mr-3">【予定】</span>
+                  <div class="flex-1 min-w-0 space-y-2">
+                    <div v-for="(s, idx) in event.schedules" :key="idx" class="leading-relaxed">
+                      <p class="flex items-center flex-wrap gap-2 mb-1">
+                        <span class="text-gray-400">・</span>
+                        <span class="bg-pink-50 text-pink-700 border-pink-200 dark:bg-ky-darkpink/20 dark:border-ky-darkpink dark:text-ky-darkpink text-xs px-2 py-0.5 rounded-md font-bold border">{{ s.grades && s.grades.length > 0 ? s.grades.join(', ') : '全学年' }}</span>
+                        <span class="font-medium"><span v-if="s.startTime">{{ formatTime(s.startTime) }}〜</span><span v-if="s.endTime">{{ formatTime(s.endTime) }}</span> <span v-if="s.location">@{{ s.location }}</span></span>
                       </p>
                     </div>
-                    <div class="flex flex-wrap gap-2 mt-1">
-                      <a v-for="(url, i) in getUniqueUrls(event.schedules)" :key="i" :href="url" target="_blank" class="text-[10px] text-blue-400 underline border border-gray-700 px-1 rounded">📍MAP{{getUniqueUrls(event.schedules).length > 1 ? i+1 : ''}}</a>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                      <a v-for="(url, i) in getUniqueUrls(event.schedules)" :key="i" :href="url" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 underline border border-gray-300 dark:border-gray-700 px-2 py-1 rounded bg-white dark:bg-transparent shadow-sm">📍MAP{{getUniqueUrls(event.schedules).length > 1 ? i+1 : ''}}</a>
                     </div>
                   </div>
                 </div>
                 <div v-if="event.items" class="flex items-start">
-                  <span class="font-bold text-ky-pink flex-shrink-0 whitespace-nowrap mr-2">【持物】</span>
-                  <div class="flex-1 min-w-0"><p class="break-words">{{ event.items }}</p></div>
+                  <span class="font-bold text-ky-lightpink dark:text-ky-darkpink flex-shrink-0 whitespace-nowrap mr-3">【持物】</span>
+                  <div class="flex-1 min-w-0"><p class="break-words font-medium">{{ event.items }}</p></div>
                 </div>
-                <div v-if="event.comment || event.notes" class="mt-3 p-2 bg-[#222222] rounded text-xs border border-gray-700">
-                  <p v-if="event.comment" class="mb-1"><span class="text-ky-pink font-bold">監督より: </span>{{ event.comment }}</p>
-                  <p v-if="event.notes"><span class="text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
+                <div v-if="event.comment || event.notes" class="mt-5 p-4 bg-yellow-50/50 dark:bg-[#222222] rounded-xl text-sm border border-yellow-200 dark:border-gray-700 shadow-inner">
+                  <p v-if="event.comment" class="mb-2"><span class="text-ky-lightpink dark:text-ky-darkpink font-bold">監督より: </span>{{ event.comment }}</p>
+                  <p v-if="event.notes"><span class="text-gray-600 dark:text-gray-400 font-bold">備考: </span>{{ event.notes }}</p>
                 </div>
               </div>
             </div>
             
-            <div class="p-4 space-y-4">
+            <div class="p-5 md:p-6 space-y-6">
               <template v-if="myRole !== '監督'">
-                <div v-for="member in familyMembers" :key="member.id" class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                  <p class="font-bold text-sm mb-2"><span class="w-2 h-2 inline-block rounded-full bg-ky-pink mr-2"></span>{{ member.name }} <span class="text-xs text-gray-500">({{ member.role }})</span></p>
-                  <div class="flex space-x-2 mb-3">
-                    <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">参加</button>
-                    <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">未定</button>
-                    <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-500' : 'bg-[#222222] text-gray-400 border-gray-700'" class="flex-1 py-2 rounded border text-xs font-bold transition">不参加</button>
+                <div v-for="member in familyMembers" :key="member.id" class="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <p class="font-bold text-lg mb-3 flex items-center"><span class="w-3 h-3 inline-block rounded-full bg-ky-lightpink dark:bg-ky-darkpink mr-3"></span>{{ member.name }} <span class="text-sm text-gray-500 font-normal ml-2">({{ member.role }})</span></p>
+                  <div class="flex space-x-3 mb-4">
+                    <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-600 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">参加</button>
+                    <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-500 text-gray-900 border-yellow-500 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">未定</button>
+                    <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">不参加</button>
                   </div>
-                  <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="flex items-center justify-between border-t border-gray-700 pt-2 mt-2">
-                    <span class="text-[10px] text-gray-400">車出し可能ですか？</span>
-                    <div class="flex space-x-2 w-full ml-2 flex-wrap">
-                      <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition min-w-[30%]">配車 可</button>
-                      <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition min-w-[30%]">現地直行</button>
-                      <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white' : 'bg-[#222222] text-gray-400'" class="flex-1 px-1 py-1.5 rounded text-[10px] transition min-w-[30%]">配車 不可</button>
+                  <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                    <span class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">🚗 車出し可能ですか？</span>
+                    <div class="flex space-x-2 w-full flex-wrap gap-y-2">
+                      <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 可</button>
+                      <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">現地直行</button>
+                      <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 不可</button>
                       
-                      <div v-if="member.canDrive && (getCarStatus(event.id, member.id) === '可' || getCarStatus(event.id, member.id) === '現地直行')" class="w-full mt-3">
-                        <textarea v-model="getOrCreateRecord(event.id, member).carComment" rows="1" @input="autoResize" placeholder="配車担当への連絡（例: 13時早退、荷物等）" class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-[10px]"></textarea>
+                      <div v-if="member.canDrive && (getCarStatus(event.id, member.id) === '可' || getCarStatus(event.id, member.id) === '現地直行')" class="w-full mt-2">
+                        <textarea v-model="getOrCreateRecord(event.id, member).carComment" rows="1" @input="autoResize" placeholder="配車担当への連絡（例: 13時早退、荷物等）" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink text-sm shadow-inner"></textarea>
                       </div>
                     </div>
                   </div>
                 </div>
-                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-4 bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition hover:opacity-80 flex justify-center items-center text-sm">
-                  <span v-if="isSubmittingEvent === event.id" class="animate-spin h-4 w-4 border-2 border-ky-black rounded-full border-t-transparent mr-2"></span>
-                  {{ isSubmittingEvent === event.id ? '更新中...' : (hasSubmittedAttendance(event.id) ? '出欠を修正して更新する' : '出欠を確定・送信する') }}
+                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-6 bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-extrabold py-4 rounded-xl shadow-lg transition hover:opacity-90 flex justify-center items-center text-lg">
+                  <span v-if="isSubmittingEvent === event.id" class="animate-spin h-5 w-5 border-2 border-gray-900 rounded-full border-t-transparent mr-3"></span>
+                  {{ isSubmittingEvent === event.id ? '更新中...' : (hasSubmittedAttendance(event.id) ? '出欠を修正して更新' : '出欠を確定・送信') }}
                 </button>
               </template>
               
-              <button v-if="myRole === '監督'" @click="openEditModal(event)" class="w-full mt-2 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition hover:bg-blue-500 text-sm">
+              <button v-if="myRole === '監督'" @click="openEditModal(event)" class="w-full mt-2 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-md transition hover:bg-blue-500 text-base">
                 イベント内容を修正する
               </button>
             </div>
           </div>
         </div>
 
-        <div v-if="currentTab === 'family'" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
-            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">あなたの家族構成</h3>
-            <ul class="space-y-3 mb-6">
-              <li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-[#1a1a1a] p-3 rounded border border-gray-800">
+        <div v-if="currentTab === 'family'" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border border-gray-200 dark:border-gray-800 shadow-xl">
+            <h3 class="font-bold text-lg text-ky-lightpink dark:text-ky-darkpink mb-5 border-b border-gray-200 dark:border-gray-800 pb-3">あなたの家族構成</h3>
+            <ul class="space-y-4 mb-8">
+              <li v-for="member in familyMembers" :key="member.id" class="flex justify-between items-center bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div class="flex items-center">
-                  <span class="font-medium text-sm">{{ member.name }}</span><span class="text-[10px] px-2 py-0.5 bg-gray-800 rounded text-gray-400 ml-2">{{ member.role }}</span>
+                  <span class="font-bold text-base text-gray-900 dark:text-white">{{ member.name }}</span>
+                  <span class="text-xs px-2.5 py-1 bg-gray-200 dark:bg-gray-800 rounded-md text-gray-600 dark:text-gray-400 ml-3 font-medium">{{ member.role }}</span>
                 </div>
-                <button v-if="member.id !== profile?.userId" @click="deleteFamilyMember(member.id, member.name)" class="text-[10px] text-red-400 border border-red-900/50 px-3 py-1.5 rounded hover:bg-red-900/50 transition">削除</button>
+                <button v-if="member.id !== profile?.userId" @click="deleteFamilyMember(member.id, member.name)" class="text-xs text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 transition font-bold shadow-sm">削除</button>
               </li>
             </ul>
-            <h4 class="font-bold text-xs text-gray-300 mb-3 mt-6">＋ 新しい家族（選手）を追加</h4>
-            <form @submit.prevent="addFamilyMember" class="space-y-3">
-              <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-3 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm">
-              <div class="flex space-x-2">
-                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm" :class="newMember.role === '選手' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
-                <label class="flex-1 text-center py-2 border border-gray-700 rounded-lg cursor-pointer text-sm" :class="newMember.role === '家族' ? 'bg-ky-pink/20 text-ky-pink border-ky-pink' : 'text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
+            <h4 class="font-bold text-base text-gray-700 dark:text-gray-300 mb-4 mt-8 flex items-center"><span class="text-ky-lightpink dark:text-ky-darkpink text-xl mr-2">＋</span> 新しい家族を追加</h4>
+            <form @submit.prevent="addFamilyMember" class="space-y-5 bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800">
+              <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-4 bg-white dark:bg-[#111111] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-ky-lightpink shadow-inner">
+              <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">役割</label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '選手' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '家族' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '保護者(父)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="保護者(父)" class="hidden"> 保護者(父)</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '保護者(母)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="保護者(母)" class="hidden"> 保護者(母)</label>
               </div>
-              <button type="submit" :disabled="isSaving" class="w-full mt-2 bg-gray-800 text-white font-bold py-3 rounded-lg border border-gray-600 text-sm">追加する</button>
+
+              <!-- 追加：保護者を追加する場合の車両入力 -->
+              <div v-if="['保護者(父)', '保護者(母)'].includes(newMember.role)" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink mb-3">車出し（配車）は可能ですか？</label>
+                <div class="space-y-3">
+                  <input v-model="newMember.vehicleName" type="text" placeholder="車両の呼び名 (例: 山田父号)" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                  <input v-model="newMember.vehicleType" type="text" placeholder="車種 (例: アルファード, ノア等)" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                  <input v-model="newMember.vehicleCapacity" type="number" placeholder="乗車定員 (運転手含む)" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                  <p class="text-xs text-gray-500">※車出しをしない場合は空欄でOKです。</p>
+                </div>
+              </div>
+
+              <button type="submit" :disabled="isSaving" class="w-full mt-6 bg-gray-800 dark:bg-gray-700 text-white font-bold py-4 rounded-xl shadow-md text-base transition hover:bg-gray-900">リストに追加する</button>
             </form>
           </div>
         </div>
 
-        <div v-if="currentTab === 'director' && globalEventId" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
-            <div v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" class="bg-[#1a1a1a] p-4 rounded-lg border border-gray-800 mb-6">
-              <p class="text-xs font-bold text-gray-300 mb-3">＋ チームバス・監督車の手配</p>
-              <div v-if="dummyVehicles.length > 0" class="mb-4 space-y-2">
-                <div v-for="dummy in dummyVehicles" :key="dummy.userId" class="flex items-center justify-between bg-[#222222] p-2 rounded border border-gray-700">
-                  <span class="text-xs font-bold text-ky-pink w-1/3 truncate">{{ dummy.name }}</span>
+        <div v-if="currentTab === 'director' && globalEventId" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-ky-lightpink dark:border-ky-darkpink shadow-xl">
+            <div v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 mb-8">
+              <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">＋ チームバス・監督車の手配</p>
+              <div v-if="dummyVehicles.length > 0" class="mb-5 space-y-3">
+                <div v-for="dummy in dummyVehicles" :key="dummy.userId" class="flex items-center justify-between bg-white dark:bg-[#222222] p-3 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm">
+                  <span class="text-sm font-bold text-ky-lightpink dark:text-ky-darkpink w-1/3 truncate">{{ dummy.name }}</span>
                   <div class="flex space-x-2 w-2/3 justify-end">
-                    <div class="flex items-center bg-[#111111] rounded border border-gray-700 overflow-hidden">
-                      <span class="text-[10px] text-gray-400 px-2 border-r border-gray-700">定員</span>
-                      <input v-model="dummy.capacity" type="number" class="w-10 bg-transparent text-white text-xs text-center py-1 outline-none">
+                    <div class="flex items-center bg-gray-50 dark:bg-[#111111] rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden">
+                      <span class="text-xs text-gray-500 dark:text-gray-400 px-3 py-1 border-r border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-[#1a1a1a]">定員</span>
+                      <input v-model="dummy.capacity" type="number" class="w-12 bg-transparent text-gray-900 dark:text-white text-sm font-bold text-center py-1 outline-none">
                     </div>
-                    <button @click="updateDummyVehicle(dummy)" class="bg-blue-600 text-white px-2 py-1 text-[10px] rounded hover:bg-blue-500">更新</button>
-                    <button @click="deleteDummyVehicle(dummy)" class="bg-red-600 text-white px-2 py-1 text-[10px] rounded hover:bg-red-500">削除</button>
+                    <button @click="updateDummyVehicle(dummy)" class="bg-blue-600 text-white px-3 py-1 text-xs font-bold rounded-md hover:bg-blue-700 shadow-sm">更新</button>
+                    <button @click="deleteDummyVehicle(dummy)" class="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded-md hover:bg-red-700 shadow-sm">削除</button>
                   </div>
                 </div>
               </div>
-              <div class="flex space-x-2 pt-2 border-t border-gray-700" :class="{'mt-2': dummyVehicles.length > 0}">
-                <select v-model="dummyForm.type" class="flex-1 bg-[#222222] text-xs text-white px-2 py-2 rounded border border-gray-700 outline-none"><option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option></select>
-                <input v-model="dummyForm.capacity" type="number" placeholder="定員" class="w-20 bg-[#222222] text-xs text-white px-2 py-2 rounded border border-gray-700 outline-none">
-                <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-pink text-ky-black px-3 py-2 text-xs font-bold rounded disabled:opacity-50">追加</button>
+              <div class="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <select v-model="dummyForm.type" class="flex-1 bg-white dark:bg-[#222222] text-sm text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none"><option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option></select>
+                <input v-model="dummyForm.capacity" type="number" placeholder="定員" class="w-24 bg-white dark:bg-[#222222] text-sm text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-center">
+                <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 px-4 py-2 text-sm font-bold rounded-lg disabled:opacity-50 shadow-sm">追加</button>
               </div>
             </div>
-            <div class="mb-6">
-              <h3 class="text-xs font-bold text-ky-pink mb-3 border-b border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
-              <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">選手</p><p class="text-xl font-bold text-white">{{ directorStats.players }}</p></div>
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">大人</p><p class="text-xl font-bold text-white">{{ directorStats.parents }}</p></div>
-                <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800"><p class="text-[10px] text-gray-400">他</p><p class="text-xl font-bold text-white">{{ directorStats.family }}</p></div>
+            
+            <div class="mb-8">
+              <h3 class="text-base font-bold text-ky-lightpink dark:text-ky-darkpink mb-4 border-b border-gray-200 dark:border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">選手</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.players }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">大人</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.parents }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">他</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.family }}</p></div>
               </div>
             </div>
-            <div class="space-y-4">
-              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.players" :key="p.id" class="bg-gray-800 text-gray-200 text-[10px] px-2 py-1 rounded">{{ p.name }}</span></div></div>
-              <div><h4 class="text-xs font-bold text-gray-400 mb-2">参加大人（審判等）</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-700 text-gray-300 text-[10px] px-2 py-1 rounded">{{ p.name }} <span class="text-ky-pink">{{ p.role }}</span></span></div></div>
+            
+            <div class="space-y-6">
+              <div>
+                <h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span v-for="p in directorLists.players" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加大人（審判等）</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div v-if="currentTab === 'allocation' && globalEventId" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border border-ky-pink/50">
-            <label class="block text-xs font-bold text-ky-pink mb-2">乗車待ちのメンバー（未配車）</label>
-            <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 h-40 overflow-y-auto mb-4 space-y-2">
-              <p v-if="unassignedPassengers.length === 0" class="text-xs text-gray-500 text-center mt-4">全員の配車が完了しています！</p>
-              <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-2 bg-[#222222] rounded cursor-pointer border border-transparent hover:border-gray-700 transition">
-                <input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-pink w-4 h-4">
-                <span class="text-sm flex-1">{{ passenger.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(passenger.userId) }})</span></span>
+        <div v-if="currentTab === 'allocation' && globalEventId" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-ky-lightpink dark:border-ky-darkpink shadow-xl">
+            <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink mb-3">乗車待ちのメンバー（未配車）</label>
+            <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 h-48 overflow-y-auto mb-6 space-y-2 shadow-inner">
+              <p v-if="unassignedPassengers.length === 0" class="text-sm text-green-600 font-bold text-center mt-6">✨ 全員の配車が完了しています！ ✨</p>
+              <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-3 bg-white dark:bg-[#222222] rounded-lg cursor-pointer border border-transparent shadow-sm hover:border-ky-lightpink transition">
+                <input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-lightpink dark:accent-ky-darkpink w-5 h-5">
+                <span class="text-base font-bold flex-1 text-gray-900 dark:text-white">{{ passenger.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(passenger.userId) }})</span></span>
               </label>
             </div>
-            <label class="block text-xs font-bold text-ky-pink mb-2">どの車両に乗せますか？</label>
-            <select v-model="targetVehicleId" class="w-full px-4 py-3 mb-4 bg-[#1a1a1a] text-white rounded-lg border border-gray-700 outline-none text-sm"><option disabled value="">車両を選択してください</option><option v-for="car in availableCars" :key="car.userId" :value="car.userId">{{ getVehicleDisplayName(car) }}</option></select>
-            <button @click="executeAllocation" :disabled="selectedPassengers.length === 0 || !targetVehicleId || isAllocating" class="w-full bg-ky-pink text-ky-black font-bold py-3 rounded-lg shadow-md transition disabled:opacity-50 text-sm">{{ isAllocating ? '保存中...' : '割り当てる' }}</button>
+            
+            <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink mb-3">どの車両に乗せますか？</label>
+            <select v-model="targetVehicleId" class="w-full px-5 py-4 mb-6 bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm focus:ring-2 focus:ring-ky-lightpink">
+              <option disabled value="">車両を選択してください</option>
+              <option v-for="car in availableCars" :key="car.userId" :value="car.userId">{{ getVehicleDisplayName(car) }}</option>
+            </select>
+            <button @click="executeAllocation" :disabled="selectedPassengers.length === 0 || !targetVehicleId || isAllocating" class="w-full bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg">
+              {{ isAllocating ? '保存中...' : '割り当てる' }}
+            </button>
           </div>
-          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
-            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">車両別 配車状況</h3>
-            <div class="space-y-4">
-              <div v-for="car in availableCars" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden" :class="{'opacity-50': car.isExempt}">
-                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center">
-                  <span class="font-bold text-xs">{{ getVehicleDisplayName(car) }}</span>
-                  <button v-if="myPermission === '配車' || myPermission === '運営'" @click="toggleCarExemption(car)" class="px-2 py-1 text-[10px] rounded border transition" :class="car.isExempt ? 'bg-red-900/50 text-red-400 border-red-500' : 'bg-gray-800 text-gray-400 border-gray-600 hover:text-white'">
+
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border border-gray-200 dark:border-gray-800 shadow-xl">
+            <h3 class="font-bold text-lg text-ky-lightpink dark:text-ky-darkpink mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">車両別 配車状況</h3>
+            <div class="space-y-5">
+              <div v-for="car in availableCars" :key="car.userId" class="bg-gray-50 dark:bg-[#1a1a1a] rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow-sm transition" :class="{'opacity-50 grayscale': car.isExempt}">
+                <div class="bg-gray-200 dark:bg-[#222222] px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center">
+                  <span class="font-bold text-base text-gray-900 dark:text-white">{{ getVehicleDisplayName(car) }}</span>
+                  <button v-if="myPermission === '配車' || myPermission === '運営'" @click="toggleCarExemption(car)" class="px-3 py-1.5 text-xs font-bold rounded-lg border transition shadow-sm" :class="car.isExempt ? 'bg-red-100 text-red-600 border-red-300 dark:bg-red-900/50 dark:text-red-400 dark:border-red-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white'">
                     {{ car.isExempt ? '免除中 (解除)' : '配車を免除' }}
                   </button>
                 </div>
-                <div v-if="car.carComment && !car.isExempt" class="px-3 py-1 bg-blue-900/20 text-blue-300 text-[10px] border-b border-gray-700">💬 {{ car.carComment }}</div>
-                <ul v-if="!car.isExempt" class="p-2 space-y-1"><li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex justify-between items-center text-sm px-2 py-1 rounded hover:bg-gray-800"><span>{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></span><button @click="unassign(p.userId)" class="text-[10px] text-red-400 border border-red-900 px-2 py-1 rounded hover:bg-red-900 transition">解除</button></li></ul>
+                <div v-if="car.carComment && !car.isExempt" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
+                <ul v-if="!car.isExempt" class="p-3 space-y-2">
+                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex justify-between items-center text-base px-3 py-2 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-gray-100 dark:border-transparent">
+                    <span class="font-bold text-gray-800 dark:text-gray-200">{{ p.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span></span>
+                    <button @click="unassign(p.userId)" class="text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition">解除</button>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="currentTab === 'view_allocation' && globalEventId" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border border-gray-800">
-            <h3 class="font-bold text-ky-pink mb-4 border-b border-gray-800 pb-2">配車表</h3>
-            <div class="space-y-4 mb-6">
-              <div v-for="car in availableCars.filter(c => !c.isExempt)" :key="car.userId" class="bg-[#1a1a1a] rounded-lg border border-gray-700 overflow-hidden">
-                <div class="bg-[#222222] px-3 py-2 border-b border-gray-700 flex justify-between items-center"><span class="font-bold text-xs">{{ getVehicleDisplayName(car) }}</span></div>
-                <div v-if="car.carComment" class="px-3 py-1 bg-blue-900/20 text-blue-300 text-[10px] border-b border-gray-700">💬 {{ car.carComment }}</div>
-                <ul class="p-2 space-y-1 text-sm"><li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="px-2 py-1">{{ p.name }} <span class="text-[10px] text-gray-500">({{ getUserRole(p.userId) }})</span></li></ul>
+        <div v-if="currentTab === 'view_allocation' && globalEventId" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border border-gray-200 dark:border-gray-800 shadow-xl">
+            <h3 class="font-bold text-xl text-ky-lightpink dark:text-ky-darkpink mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">配車表</h3>
+            <div class="space-y-5 mb-8">
+              <div v-for="car in availableCars.filter(c => !c.isExempt)" :key="car.userId" class="bg-gray-50 dark:bg-[#1a1a1a] rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow-sm">
+                <div class="bg-gray-200 dark:bg-[#222222] px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center"><span class="font-bold text-base text-gray-900 dark:text-white">{{ getVehicleDisplayName(car) }}</span></div>
+                <div v-if="car.carComment" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
+                <ul class="p-3 space-y-1 text-base font-medium">
+                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="px-3 py-1.5 text-gray-800 dark:text-gray-200">{{ p.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span></li>
+                </ul>
               </div>
             </div>
-            <h3 class="font-bold text-yellow-500 mb-3 border-b border-gray-800 pb-2 text-xs">配車待ち（未定）</h3>
-            <div class="flex flex-wrap gap-2"><span v-for="p in unassignedPassengers" :key="p.userId" class="bg-gray-800 text-gray-300 text-[10px] px-2 py-1 rounded">{{ p.name }}</span></div>
+            <h3 class="font-bold text-yellow-600 dark:text-yellow-500 mb-4 border-b border-gray-200 dark:border-gray-800 pb-2 text-base">配車待ち（未定）</h3>
+            <div class="flex flex-wrap gap-2">
+              <span v-for="p in unassignedPassengers" :key="p.userId" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium px-3 py-1.5 rounded-lg shadow-sm">{{ p.name }}</span>
+            </div>
           </div>
         </div>
 
-        <div v-if="currentTab === 'create_event'" class="space-y-6">
-          <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-green-500 shadow-lg shadow-green-500/10">
-            <div class="mb-4 border-b border-gray-800 pb-2"><h2 class="text-lg font-bold text-green-400">新しい予定を作成</h2></div>
-            <form @submit.prevent="submitEvent" class="space-y-5">
-              <div class="grid grid-cols-2 gap-3">
+        <div v-if="currentTab === 'create_event'" class="space-y-8">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-green-500 shadow-xl">
+            <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-3"><h2 class="text-xl font-bold text-green-600 dark:text-green-400">新しい予定を作成</h2></div>
+            <form @submit.prevent="submitEvent" class="space-y-6">
+              <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
-                  <label class="block text-[10px] font-bold text-gray-400 mb-2">種別 <span class="text-red-500">*</span></label>
-                  <div class="flex flex-wrap gap-2">
-                    <button v-for="t in ['練習','OP戦','公式戦','合宿','遠征']" :key="t" type="button" @click="toggleEventType(evForm, t)" :class="evForm.types.includes(t) ? 'bg-green-500 text-ky-black font-bold' : 'bg-gray-800 text-gray-400'" class="px-3 py-1.5 rounded-full text-xs transition border border-transparent">{{ t }}</button>
+                  <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">種別 <span class="text-red-500">*</span></label>
+                  <div class="flex flex-wrap gap-3">
+                    <button v-for="t in ['練習','OP戦','公式戦','合宿','遠征']" :key="t" type="button" @click="toggleEventType(evForm, t)" :class="evForm.types.includes(t) ? 'bg-green-600 text-white font-bold shadow-md scale-105' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-transparent'" class="px-4 py-2 rounded-full text-sm transition">{{ t }}</button>
                   </div>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">日付 <span class="text-red-500">*</span></label><input v-model="evForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">日付 <span class="text-red-500">*</span></label><input v-model="evForm.date" type="date" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500 shadow-inner"></div>
+                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500 shadow-inner"></div>
               </div>
               
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-xs font-bold text-green-400 mb-2 border-b border-gray-700 pb-1">【出発/集合】情報</h4>
-                <div><select v-model="evForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし / 予定場所へ直接)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
-                <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-2 space-y-2"><input v-model="evForm.newDepLocationName" type="text" placeholder="場所の名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="evForm.newDepLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between bg-gray-800/50 p-2 rounded"><label class="text-[10px] text-ky-pink w-1/3 font-bold">集合時間</label><div class="w-2/3 flex space-x-2"><select v-model="evForm.gatherOffset" class="w-1/2 bg-[#222222] text-white px-2 py-1 rounded border border-gray-700 outline-none text-xs"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select><input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-[#111111] text-ky-pink font-bold px-2 py-1 rounded border border-gray-700 outline-none text-xs"></div></div>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm">
+                <h4 class="text-sm font-bold text-green-600 dark:text-green-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">【出発/集合】情報</h4>
+                <div>
+                  <select v-model="evForm.depLocationSelect" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-sm"><option value="">(指定なし / 予定場所へ直接)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
+                  <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-3 space-y-3">
+                    <input v-model="evForm.newDepLocationName" type="text" placeholder="場所の名前" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">
+                    <input v-model="evForm.newDepLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">
+                  </div>
+                </div>
+                <div class="flex items-center justify-between bg-white dark:bg-transparent p-3 rounded-lg border border-gray-200 dark:border-transparent"><label class="text-sm font-bold text-gray-700 dark:text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-gray-50 dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"></div>
+                <div class="flex items-center justify-between bg-pink-50 dark:bg-gray-800/50 p-3 rounded-lg border border-pink-100 dark:border-transparent"><label class="text-sm font-bold text-ky-lightpink dark:text-ky-darkpink w-1/3">集合時間</label>
+                  <div class="w-2/3 flex space-x-2">
+                    <select v-model="evForm.gatherOffset" class="w-1/2 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm font-medium"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select>
+                    <input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-gray-100 dark:bg-[#111111] text-ky-lightpink dark:text-ky-darkpink font-bold px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base text-center">
+                  </div>
+                </div>
               </div>
               
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <div class="flex justify-between items-center border-b border-gray-700 pb-1 mb-2"><h4 class="text-xs font-bold text-green-400">【予定】活動内容</h4><button type="button" @click="addSchedule(evForm)" class="text-[10px] bg-green-900 text-green-300 px-2 py-1 rounded hover:bg-green-800">+ 追加</button></div>
-                <div v-for="(sched, index) in evForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
-                  <button v-if="evForm.schedules.length > 1" type="button" @click="removeSchedule(evForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
-                  <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
-                  <div class="space-y-3">
-                    <div class="flex flex-wrap gap-2 mb-2">
-                      <button v-for="g in ['3年','2年','1年']" :key="g" type="button" @click="toggleScheduleGrade(sched, g)" :class="sched.grades && sched.grades.includes(g) ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#111111] text-gray-400'" class="px-3 py-1 rounded-full text-[10px] transition border border-gray-700">{{ g }}</button>
-                      <button type="button" @click="sched.grades=['全学年']" :class="!sched.grades || sched.grades.includes('全学年') ? 'bg-blue-600 text-white font-bold' : 'bg-[#111111] text-gray-400'" class="px-3 py-1 rounded-full text-[10px] transition border border-gray-700">全学年</button>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-3"><h4 class="text-sm font-bold text-green-600 dark:text-green-400">【予定】活動内容</h4><button type="button" @click="addSchedule(evForm)" class="text-xs font-bold bg-green-100 text-green-700 border border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-transparent px-3 py-1.5 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 shadow-sm">+ 追加</button></div>
+                <div v-for="(sched, index) in evForm.schedules" :key="index" class="p-4 bg-white dark:bg-[#222222] rounded-xl border border-gray-300 dark:border-gray-700 relative shadow-sm">
+                  <button v-if="evForm.schedules.length > 1" type="button" @click="removeSchedule(evForm, index)" class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-3 border-b border-gray-100 dark:border-gray-700/50 pb-1">予定 {{ index + 1 }}</p>
+                  <div class="space-y-4">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      <button v-for="g in ['3年','2年','1年']" :key="g" type="button" @click="toggleScheduleGrade(sched, g)" :class="sched.grades && sched.grades.includes(g) ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">{{ g }}</button>
+                      <button type="button" @click="sched.grades=['全学年']" :class="!sched.grades || sched.grades.includes('全学年') ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">全学年</button>
                     </div>
-                    <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
-                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
-                    <div class="flex items-center space-x-2"><div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div><span class="text-gray-500 mt-4">〜</span><div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div></div>
+                    <select v-model="sched.locationSelect" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
+                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-3"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
+                    <div class="flex items-center space-x-3 bg-gray-50 dark:bg-transparent p-2 rounded-lg border border-gray-200 dark:border-transparent">
+                      <div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div>
+                      <span class="text-gray-400 font-bold mt-5">〜</span>
+                      <div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                <label class="block text-[10px] font-bold text-gray-400 mb-2">【持物】 (複数選択可)</label>
-                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-500"><span class="text-[10px] text-gray-300">{{ item }}</span></label></div>
-                <div class="flex space-x-2"><input v-model="evForm.newItem" type="text" placeholder="その他..." class="flex-1 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-xs"><button type="button" @click="addNewItem(evForm)" :disabled="!evForm.newItem" class="bg-gray-700 text-white px-3 py-2 text-xs rounded disabled:opacity-50">追加</button></div>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-3">【持物】 (複数選択可)</label>
+                <div class="flex flex-wrap gap-2.5 mb-4"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-2 bg-white dark:bg-[#222222] px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm hover:border-green-500 transition"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-600 w-4 h-4"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ item }}</span></label></div>
+                <div class="flex space-x-3"><input v-model="evForm.newItem" type="text" placeholder="その他追加..." class="flex-1 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm shadow-sm"><button type="button" @click="addNewItem(evForm)" :disabled="!evForm.newItem" class="bg-gray-700 text-white font-bold px-5 py-3 text-sm rounded-lg disabled:opacity-50 shadow">追加</button></div>
               </div>
               
-              <div class="space-y-3">
-                <textarea v-model="evForm.comment" @input="autoResize" rows="2" placeholder="監督コメント" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
-                <textarea v-model="evForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
+              <div class="space-y-4">
+                <textarea v-model="evForm.comment" @input="autoResize" rows="2" placeholder="監督コメント" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-inner focus:ring-2 focus:ring-green-500"></textarea>
+                <textarea v-model="evForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-inner focus:ring-2 focus:ring-green-500"></textarea>
               </div>
-              <button type="submit" :disabled="isCreating" class="w-full bg-green-500 text-ky-black font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition disabled:opacity-50 text-sm">{{ isCreating ? '作成中...' : '予定を作成する' }}</button>
+              <button type="submit" :disabled="isCreating" class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg mt-4">{{ isCreating ? '作成中...' : '予定を作成する' }}</button>
             </form>
           </div>
         </div>
 
-        <div v-if="isEditing" class="fixed inset-0 bg-black/90 z-[100] overflow-y-auto px-4 py-10 flex justify-center items-start">
-          <div class="bg-[#111111] rounded-xl p-5 border-t-4 border-blue-500 shadow-2xl shadow-blue-500/20 w-full max-w-lg relative">
-            <button @click="closeEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
-            <h2 class="text-lg font-bold text-blue-400 mb-4">予定内容の修正</h2>
-            <form @submit.prevent="submitEditEvent" class="space-y-5">
-              <div class="grid grid-cols-2 gap-3">
+        <div v-if="isEditing" class="fixed inset-0 bg-black/80 dark:bg-black/90 z-[100] overflow-y-auto px-4 py-8 flex justify-center items-start backdrop-blur-sm">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-blue-600 shadow-2xl w-full max-w-lg relative mt-4">
+            <button @click="closeEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white text-3xl font-bold leading-none bg-gray-100 dark:bg-gray-800 w-10 h-10 rounded-full pb-1">&times;</button>
+            <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400 mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">予定内容の修正</h2>
+            <form @submit.prevent="submitEditEvent" class="space-y-6">
+              <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2">
-                  <label class="block text-[10px] font-bold text-gray-400 mb-2">種別 <span class="text-red-500">*</span></label>
+                  <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">種別 <span class="text-red-500">*</span></label>
                   <div class="flex flex-wrap gap-2">
-                    <button v-for="t in ['練習','OP戦','公式戦','合宿','遠征']" :key="t" type="button" @click="toggleEventType(editForm, t)" :class="editForm.types.includes(t) ? 'bg-blue-500 text-white font-bold' : 'bg-gray-800 text-gray-400'" class="px-3 py-1.5 rounded-full text-xs transition border border-transparent">{{ t }}</button>
+                    <button v-for="t in ['練習','OP戦','公式戦','合宿','遠征']" :key="t" type="button" @click="toggleEventType(editForm, t)" :class="editForm.types.includes(t) ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-transparent'" class="px-4 py-2 rounded-full text-sm transition border">{{ t }}</button>
                   </div>
                 </div>
-                <div><label class="block text-[10px] font-bold text-gray-400 mb-1">日付 <span class="text-red-500">*</span></label><input v-model="editForm.date" type="date" required class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div><input v-model="editForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full mt-5 bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">日付 <span class="text-red-500">*</span></label><input v-model="editForm.date" type="date" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">大会名・補足</label><input v-model="editForm.detail" type="text" placeholder="例: 春季大会" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500"></div>
               </div>
 
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <h4 class="text-[10px] font-bold text-blue-400 mb-2 border-b border-gray-700 pb-1">【出発/集合】情報</h4>
-                <select v-model="editForm.depLocationSelect" class="w-full bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
-                <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-2"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-[#222222] text-white px-3 py-2 rounded text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-[10px] text-gray-300 w-1/3">集合時間</label><input v-model="editForm.gatherTime" type="time" class="w-2/3 bg-[#222222] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></div>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4">
+                <h4 class="text-sm font-bold text-blue-700 dark:text-blue-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">【出発/集合】情報</h4>
+                <select v-model="editForm.depLocationSelect" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
+                <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-3"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
+                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
+                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">集合時間</label><input v-model="editForm.gatherTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
               </div>
 
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 space-y-3">
-                <div class="flex justify-between items-center border-b border-gray-700 pb-1 mb-2"><h4 class="text-xs font-bold text-blue-400">【予定】活動内容</h4><button type="button" @click="addSchedule(editForm)" class="text-[10px] bg-blue-900 text-blue-300 px-2 py-1 rounded hover:bg-blue-800">+ 追加</button></div>
-                <div v-for="(sched, index) in editForm.schedules" :key="index" class="p-3 bg-[#222222] rounded-lg border border-gray-700 relative">
-                  <button v-if="editForm.schedules.length > 1" type="button" @click="removeSchedule(editForm, index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-xl leading-none">&times;</button>
-                  <p class="text-[10px] text-gray-500 font-bold mb-2">予定 {{ index + 1 }}</p>
-                  <div class="space-y-3">
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-2"><h4 class="text-sm font-bold text-blue-700 dark:text-blue-400">【予定】活動内容</h4><button type="button" @click="addSchedule(editForm)" class="text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 shadow-sm">+ 追加</button></div>
+                <div v-for="(sched, index) in editForm.schedules" :key="index" class="p-4 bg-white dark:bg-[#222222] rounded-xl border border-gray-300 dark:border-gray-700 relative shadow-sm">
+                  <button v-if="editForm.schedules.length > 1" type="button" @click="removeSchedule(editForm, index)" class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
+                  <p class="text-xs text-gray-500 font-bold mb-3 border-b border-gray-100 dark:border-gray-700/50 pb-1">予定 {{ index + 1 }}</p>
+                  <div class="space-y-4">
                     <div class="flex flex-wrap gap-2 mb-2">
-                      <button v-for="g in ['3年','2年','1年']" :key="g" type="button" @click="toggleScheduleGrade(sched, g)" :class="sched.grades && sched.grades.includes(g) ? 'bg-ky-pink text-ky-black font-bold' : 'bg-[#111111] text-gray-400'" class="px-3 py-1 rounded-full text-[10px] transition border border-gray-700">{{ g }}</button>
-                      <button type="button" @click="sched.grades=['全学年']" :class="!sched.grades || sched.grades.includes('全学年') ? 'bg-blue-600 text-white font-bold' : 'bg-[#111111] text-gray-400'" class="px-3 py-1 rounded-full text-[10px] transition border border-gray-700">全学年</button>
+                      <button v-for="g in ['3年','2年','1年']" :key="g" type="button" @click="toggleScheduleGrade(sched, g)" :class="sched.grades && sched.grades.includes(g) ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">{{ g }}</button>
+                      <button type="button" @click="sched.grades=['全学年']" :class="!sched.grades || sched.grades.includes('全学年') ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">全学年</button>
                     </div>
-                    <select v-model="sched.locationSelect" required class="w-full bg-[#111111] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
-                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-2"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-[#111111] text-white px-3 py-2 rounded text-sm"></div>
-                    <div class="flex items-center space-x-2"><div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div><span class="text-gray-500 mt-4">〜</span><div class="flex-1"><label class="block text-[10px] text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-[#111111] text-white px-2 py-2 rounded border border-gray-700 outline-none text-sm"></div></div>
+                    <select v-model="sched.locationSelect" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
+                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-3"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
+                    <div class="flex items-center space-x-3"><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">開始</label><input v-model="sched.startTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div><span class="text-gray-400 font-bold mt-5">〜</span><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">終了</label><input v-model="sched.endTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div></div>
                   </div>
                 </div>
               </div>
 
-              <div class="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800">
-                <label class="block text-[10px] font-bold text-gray-400 mb-2">持ち物 (複数選択可)</label>
-                <div class="flex flex-wrap gap-2 mb-3"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-1 bg-[#222222] px-2 py-1 rounded border border-gray-700 cursor-pointer"><input type="checkbox" :value="item" v-model="editForm.selectedItems" class="accent-blue-500"><span class="text-[10px] text-gray-300">{{ item }}</span></label></div>
+              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800">
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-3">持ち物 (複数選択可)</label>
+                <div class="flex flex-wrap gap-2.5"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-2 bg-white dark:bg-[#222222] px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm hover:border-blue-500 transition"><input type="checkbox" :value="item" v-model="editForm.selectedItems" class="accent-blue-600 w-4 h-4"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ item }}</span></label></div>
               </div>
 
-              <div class="space-y-3">
-                <textarea v-model="editForm.comment" @input="autoResize" rows="2" placeholder="監督コメント" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
-                <textarea v-model="editForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-[#1a1a1a] text-white px-3 py-2 rounded border border-gray-700 outline-none text-sm"></textarea>
+              <div class="space-y-4">
+                <textarea v-model="editForm.comment" @input="autoResize" rows="2" placeholder="監督コメント" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500"></textarea>
+                <textarea v-model="editForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500"></textarea>
               </div>
 
-              <div class="flex space-x-3 pt-4 border-t border-gray-800">
-                <button type="button" @click="closeEditModal" class="flex-1 bg-gray-800 text-white font-bold py-3 rounded-lg text-sm">キャンセル</button>
-                <button type="submit" :disabled="isSavingEdit" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg text-sm">{{ isSavingEdit ? '保存中...' : '上書き保存' }}</button>
+              <div class="flex space-x-4 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <button type="button" @click="closeEditModal" class="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white font-bold py-4 rounded-xl text-base shadow hover:bg-gray-300 dark:hover:bg-gray-700">キャンセル</button>
+                <button type="submit" :disabled="isSavingEdit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-4 rounded-xl shadow-lg text-lg">{{ isSavingEdit ? '保存中...' : '上書き保存' }}</button>
               </div>
             </form>
           </div>
@@ -511,6 +590,19 @@
         const loadingMessage = ref('データ読み込み中...');
         const errorMessage = ref('');
         const profile = ref(null);
+
+        // ダークモードの状態管理
+        const isDarkMode = ref(false);
+        const toggleDarkMode = () => {
+          isDarkMode.value = !isDarkMode.value;
+          if (isDarkMode.value) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('ky_theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('ky_theme', 'light');
+          }
+        };
 
         const loadingProgress = ref(0);
         let progressInterval = null;
@@ -542,13 +634,13 @@
         const myPermission = ref('');
 
         const allTabDefinitions = [
-          { id: 'create_event', label: '予定作成', activeClass: 'bg-green-500 text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-green-500 border border-green-500/30' },
-          { id: 'events', label: '予定', activeClass: 'bg-ky-pink text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-gray-300 border border-gray-700' },
-          { id: 'family', label: '家族', activeClass: 'bg-ky-pink text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-gray-300 border border-gray-700' },
-          { id: 'director', label: '出欠状況', activeClass: 'bg-ky-pink text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-gray-300 border border-gray-700' },
-          { id: 'allocation', label: '配車管理', activeClass: 'bg-ky-pink text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-ky-pink border border-ky-pink/30' },
-          { id: 'view_allocation', label: '配車表', activeClass: 'bg-ky-pink text-ky-black font-bold shadow-md', inactiveClass: 'bg-[#222222] text-gray-300 border border-gray-700' },
-          { id: 'share', label: 'LINE共有', activeClass: 'bg-ky-line text-white font-bold shadow-md', inactiveClass: 'bg-[#222222] text-ky-line border border-ky-line/30' }
+          { id: 'create_event', label: '予定作成', activeClass: 'bg-green-600 text-white font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-green-600 border border-green-200 dark:border-green-600/30' },
+          { id: 'events', label: '予定', activeClass: 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700' },
+          { id: 'family', label: '家族', activeClass: 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700' },
+          { id: 'director', label: '出欠状況', activeClass: 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700' },
+          { id: 'allocation', label: '配車管理', activeClass: 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-ky-lightpink dark:text-ky-darkpink border border-ky-lightpink dark:border-ky-darkpink/30' },
+          { id: 'view_allocation', label: '配車表', activeClass: 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700' },
+          { id: 'share', label: 'LINE共有', activeClass: 'bg-ky-line text-white font-bold shadow-md', inactiveClass: 'bg-white dark:bg-[#222222] text-ky-line border border-ky-line/30' }
         ];
 
         const visibleTabs = computed(() => {
@@ -575,7 +667,8 @@
         const customScheduleText = ref('');
         const customAllocationText = ref('');
 
-        const newMember = reactive({ name: '', role: '選手' });
+        // 家族追加フォームに車両情報を追加
+        const newMember = reactive({ name: '', role: '選手', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const isSaving = ref(false);
         const isSubmittingEvent = ref('');
 
@@ -593,7 +686,6 @@
 
         const toggleEventType = (form, t) => { if (form.types.includes(t)) { form.types = form.types.filter(item => item !== t); } else { form.types.push(t); } };
         
-        // ★真っ黒エラーの原因だった追加関数
         const toggleScheduleGrade = (sched, g) => {
           if (!sched.grades) sched.grades = [];
           if (sched.grades.includes('全学年')) { sched.grades = []; }
@@ -620,6 +712,14 @@
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
         const initLiff = async () => {
+          // ダークモード初期化
+          const savedTheme = localStorage.getItem('ky_theme');
+          if (savedTheme === 'dark') {
+            isDarkMode.value = true; document.documentElement.classList.add('dark');
+          } else {
+            isDarkMode.value = false; document.documentElement.classList.remove('dark');
+          }
+          
           appState.value = 'loading'; startLoadingProgress();
           try {
             await liff.init({ liffId: LIFF_ID });
@@ -847,12 +947,29 @@
           } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
         };
 
+        // 修正：家族追加時に車両情報も送信する
         const addFamilyMember = async () => {
           if (!newMember.name) return;
           appState.value = 'loading'; startLoadingProgress();
           try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value } }) }); 
-            newMember.name = ''; await fetchDashboardData(); showAlert('追加しました！'); 
+            await fetch(GAS_URL, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+              body: JSON.stringify({ 
+                action: 'addFamilyMember', 
+                data: { 
+                  name: newMember.name, 
+                  role: newMember.role, 
+                  familyId: myFamilyId.value,
+                  vehicleName: newMember.vehicleName,
+                  vehicleType: newMember.vehicleType,
+                  vehicleCapacity: newMember.vehicleCapacity
+                } 
+              }) 
+            }); 
+            // フォームのリセット
+            newMember.name = ''; newMember.role = '選手'; newMember.vehicleName = ''; newMember.vehicleType = ''; newMember.vehicleCapacity = '';
+            await fetchDashboardData(); showAlert('追加しました！'); 
           } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました。'); }
         };
 
@@ -982,7 +1099,7 @@
 
         return {
           appState, isDashboardLoaded, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
-          hasSubmittedAttendance, getOrCreateRecord,
+          hasSubmittedAttendance, getOrCreateRecord, isDarkMode, toggleDarkMode,
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
