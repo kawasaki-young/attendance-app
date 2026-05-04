@@ -334,7 +334,7 @@
         <div v-if="currentTab === 'director' && globalEventId" class="space-y-8">
           <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-ky-lightpink dark:border-ky-darkpink shadow-xl">
             <div v-if="myRole === '監督' || myPermission === '配車' || myPermission === '運営'" class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 mb-8">
-              <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">＋ チームバス・監督車の手配</p>
+              <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">＋ チームバス・道具車・監督車の手配</p>
               <div v-if="dummyVehicles.length > 0" class="mb-5 space-y-3">
                 <div v-for="dummy in dummyVehicles" :key="dummy.userId" class="flex items-center justify-between bg-white dark:bg-[#222222] p-3 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm">
                   <span class="text-sm font-bold text-ky-lightpink dark:text-ky-darkpink w-1/3 truncate">{{ dummy.name }}</span>
@@ -349,7 +349,7 @@
                 </div>
               </div>
               <div class="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <select v-model="dummyForm.type" class="flex-1 bg-white dark:bg-[#222222] text-sm text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none"><option value="チームバス">チームバス</option><option value="監督自家用車">監督自家用車</option></select>
+                <select v-model="dummyForm.type" class="flex-1 bg-white dark:bg-[#222222] text-sm text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none"><option value="チームバス">チームバス</option><option value="道具車">道具車</option><option value="監督自家用車">監督自家用車</option></select>
                 <input v-model="dummyForm.capacity" type="number" placeholder="定員" class="w-24 bg-white dark:bg-[#222222] text-sm text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-center">
                 <button @click="addDummyVehicle" :disabled="!dummyForm.capacity" class="bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 px-4 py-2 text-sm font-bold rounded-lg disabled:opacity-50 shadow-sm">追加</button>
               </div>
@@ -357,38 +357,39 @@
             
             <div class="mb-8">
               <h3 class="text-base font-bold text-ky-lightpink dark:text-ky-darkpink mb-4 border-b border-gray-200 dark:border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
-              <div class="grid grid-cols-3 gap-3 text-center">
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">選手</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.players }}</p></div>
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">大人</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.parents }}</p></div>
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">他</p><p class="text-3xl font-black text-gray-900 dark:text-white">{{ directorStats.family }}</p></div>
+              <div class="grid grid-cols-4 gap-2 text-center">
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">選手</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.players }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">保護者</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.parents }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">コーチ</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.coaches }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">他</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.family }}</p></div>
               </div>
             </div>
             
             <div class="space-y-6">
-              <div>
-                <h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="p in directorLists.players" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span>
-                </div>
-              </div>
-              <div>
-                <h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加大人（審判等）</h4>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="p in directorLists.adults" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span>
-                </div>
-              </div>
+              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.players" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.parents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.coaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.others.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (家族・OB等)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.others" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span></div></div>
             </div>
           </div>
         </div>
 
         <div v-if="currentTab === 'allocation' && globalEventId" class="space-y-8">
           <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-ky-lightpink dark:border-ky-darkpink shadow-xl">
-            <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink mb-3">乗車待ちのメンバー（未配車）</label>
+            <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-800 pb-2">
+              <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink">乗車待ちのメンバー（未配車）</label>
+              <button v-if="myPermission === '配車' || myPermission === '運営' || myRole === '監督'" @click="addLuggage" class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition shadow-sm font-bold">＋ 荷物を追加</button>
+            </div>
             <div class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-800 h-48 overflow-y-auto mb-6 space-y-2 shadow-inner">
               <p v-if="unassignedPassengers.length === 0" class="text-sm text-green-600 font-bold text-center mt-6">✨ 全員の配車が完了しています！ ✨</p>
               <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-3 bg-white dark:bg-[#222222] rounded-lg cursor-pointer border border-transparent shadow-sm hover:border-ky-lightpink transition">
                 <input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-lightpink dark:accent-ky-darkpink w-5 h-5">
-                <span class="text-base font-bold flex-1 text-gray-900 dark:text-white">{{ passenger.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(passenger.userId) }})</span></span>
+                <span class="text-base font-bold flex-1 text-gray-900 dark:text-white">
+                  {{ passenger.name }} 
+                  <span v-if="!passenger.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(passenger.userId) }})</span>
+                  <span v-else class="text-xs text-orange-500 font-bold ml-1 border border-orange-300 bg-orange-50 dark:bg-transparent px-1 rounded">(荷物)</span>
+                </span>
+                <button v-if="passenger.isDummy" @click.prevent="deleteDummyVehicle(passenger)" class="text-xs text-red-500 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-transparent px-2 py-1 rounded-md hover:bg-red-100 transition shadow-sm font-bold">削除</button>
               </label>
             </div>
             
@@ -415,7 +416,7 @@
                 <div v-if="car.carComment && !car.isExempt" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
                 <ul v-if="!car.isExempt" class="p-3 space-y-2">
                   <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex justify-between items-center text-base px-3 py-2 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-gray-100 dark:border-transparent">
-                    <span class="font-bold text-gray-800 dark:text-gray-200">{{ p.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span></span>
+                    <span class="font-bold text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></span>
                     <button @click="unassign(p.userId)" class="text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition">解除</button>
                   </li>
                 </ul>
@@ -432,7 +433,7 @@
                 <div class="bg-gray-200 dark:bg-[#222222] px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center"><span class="font-bold text-base text-gray-900 dark:text-white">{{ getVehicleDisplayName(car) }}</span></div>
                 <div v-if="car.carComment" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
                 <ul class="p-3 space-y-1 text-base font-medium">
-                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="px-3 py-1.5 text-gray-800 dark:text-gray-200">{{ p.name }} <span class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span></li>
+                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="px-3 py-1.5 text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></li>
                 </ul>
               </div>
             </div>
@@ -667,7 +668,6 @@
         const customScheduleText = ref('');
         const customAllocationText = ref('');
 
-        // 家族追加フォームに車両情報を追加
         const newMember = reactive({ name: '', role: '選手', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const isSaving = ref(false);
         const isSubmittingEvent = ref('');
@@ -712,7 +712,6 @@
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
         const initLiff = async () => {
-          // ダークモード初期化
           const savedTheme = localStorage.getItem('ky_theme');
           if (savedTheme === 'dark') {
             isDarkMode.value = true; document.documentElement.classList.add('dark');
@@ -848,8 +847,17 @@
               if (car.carStatus === '現地直行') carName += ' [現地直行]';
               text += `【${carName}】\n`;
               const passengers = getPassengersInCar(car.userId, targetEvent.id);
-              if (passengers.length === 0) { text += '・空席\n'; } 
-              else { passengers.forEach(p => { text += `・${p.name} (${getUserRole(p.userId)})\n`; }); }
+              if (passengers.length === 0) { 
+                text += '・空席\n'; 
+              } else { 
+                passengers.forEach(p => { 
+                  if (!p.isDummy) {
+                    text += `・${p.name} (${getUserRole(p.userId)})\n`; 
+                  } else {
+                    text += `・${p.name} (荷物)\n`;
+                  }
+                }); 
+              }
               text += '\n';
             });
           });
@@ -947,7 +955,6 @@
           } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
         };
 
-        // 修正：家族追加時に車両情報も送信する
         const addFamilyMember = async () => {
           if (!newMember.name) return;
           appState.value = 'loading'; startLoadingProgress();
@@ -967,7 +974,6 @@
                 } 
               }) 
             }); 
-            // フォームのリセット
             newMember.name = ''; newMember.role = '選手'; newMember.vehicleName = ''; newMember.vehicleType = ''; newMember.vehicleCapacity = '';
             await fetchDashboardData(); showAlert('追加しました！'); 
           } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました。'); }
@@ -982,34 +988,58 @@
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
         };
 
+        // ★出欠サマリーの計算ロジック（監督を除外し、コーチを追加）
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
-          return { total: participants.length, players: participants.filter(p => getUserRole(p.userId) === '選手').length, parents: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督').length, family: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB').length };
+          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && getUserRole(r.userId) !== '監督');
+          return { 
+            total: participants.length, 
+            players: participants.filter(p => getUserRole(p.userId) === '選手').length, 
+            parents: participants.filter(p => getUserRole(p.userId).includes('保護者')).length, 
+            coaches: participants.filter(p => getUserRole(p.userId) === 'コーチ').length, 
+            family: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB' || getUserRole(p.userId) === '一般').length 
+          };
         });
         const directorLists = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy);
-          return { players: participants.filter(p => getUserRole(p.userId) === '選手'), adults: participants.filter(p => getUserRole(p.userId).includes('保護者') || getUserRole(p.userId) === 'コーチ' || getUserRole(p.userId) === '監督' || getUserRole(p.userId) === 'OB').map(p => ({...p, role: getUserRole(p.userId)})) };
+          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && getUserRole(r.userId) !== '監督');
+          return { 
+            players: participants.filter(p => getUserRole(p.userId) === '選手'), 
+            parents: participants.filter(p => getUserRole(p.userId).includes('保護者')),
+            coaches: participants.filter(p => getUserRole(p.userId) === 'コーチ'),
+            others: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB' || getUserRole(p.userId) === '一般').map(p => ({...p, role: getUserRole(p.userId)})) 
+          };
         });
-        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy));
-        const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && !r.assignTo));
+        
+        // ★配車管理の車両と荷物の計算ロジック
+        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || (r.isDummy && r.carStatus === '可')));
+        const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => (r.status === '参加' && !r.isDummy && !r.assignTo) || (r.isDummy && r.carStatus === '不可' && !r.assignTo)));
+        
         const getVehicleDisplayName = (car) => {
           let cap = 0; let name = '';
           if (car.isDummy) { name = car.name; cap = Number(car.capacity) || 0; } else { const user = allUsers.value.find(u => u.id === car.userId); name = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; cap = user ? Number(user.vehicleCapacity) || 0 : 0; }
           const directLabel = car.carStatus === '現地直行' ? ' 【現地直行】' : '';
           return `${name}${directLabel} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
         };
-        const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy));
+        const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy && r.carStatus === '可'));
 
         const addDummyVehicle = async () => {
           appState.value = 'loading'; startLoadingProgress();
           try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity } }) }); 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity, isLuggage: false } }) }); 
             dummyForm.capacity = ''; await fetchDashboardData(); showAlert('手配車両を追加しました！');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
+        const addLuggage = async () => {
+          appState.value = 'loading'; startLoadingProgress();
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: '選手の荷物', capacity: 0, isLuggage: true } }) }); 
+            await fetchDashboardData(); showAlert('荷物を乗車待ちに追加しました！');
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
+        };
+
         const updateDummyVehicle = async (dummy) => {
+          if (dummy.carStatus === '不可') return; // 荷物は更新不可
           if (!dummy.capacity) { showAlert('定員を入力してください。'); return; }
           appState.value = 'loading'; startLoadingProgress();
           try {
@@ -1019,11 +1049,11 @@
         };
 
         const deleteDummyVehicle = async (dummy) => {
-          if (!confirm(`${dummy.name} の手配を削除しますか？\n※既に配車されているメンバーがいる場合、未配車に戻ります。`)) return;
+          if (!confirm(`${dummy.name} を削除しますか？\n※既に配車されているメンバーがいる場合、未配車に戻ります。`)) return;
           appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId } }) });
-            await fetchDashboardData(); showAlert(`${dummy.name} の手配を削除しました。`);
+            await fetchDashboardData(); showAlert(`${dummy.name} を削除しました。`);
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
@@ -1107,7 +1137,7 @@
           getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, 
           directorStats, directorLists, dummyForm, dummyVehicles, addDummyVehicle, updateDummyVehicle, deleteDummyVehicle,
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
-          getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign,
+          getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign, addLuggage,
           getLocUrl, computedGatherTime, addNewItem, submitEvent,
           visibleTabs, toggleEventType, toggleScheduleGrade, autoResize, toggleCarExemption, 
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
