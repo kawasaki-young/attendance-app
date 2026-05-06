@@ -358,18 +358,39 @@
             <div class="mb-8">
               <h3 class="text-base font-bold text-ky-lightpink dark:text-ky-darkpink mb-4 border-b border-gray-200 dark:border-gray-800 pb-2">出欠サマリー (計 {{ directorStats.total }}名)</h3>
               <div class="grid grid-cols-4 gap-2 text-center">
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">選手</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.players }}</p></div>
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">保護者</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.parents }}</p></div>
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">コーチ</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.coaches }}</p></div>
-                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"><p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">他</p><p class="text-2xl font-black text-gray-900 dark:text-white">{{ directorStats.family }}</p></div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">選手</p>
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-400">参加 <span class="text-xl font-black text-gray-900 dark:text-white">{{ directorStats.players.attend }}</span></p>
+                  <p class="text-[10px] text-gray-500 mt-1">欠席 {{ directorStats.players.absent }} / 未定 {{ directorStats.players.pending }}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">保護者</p>
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-400">参加 <span class="text-xl font-black text-gray-900 dark:text-white">{{ directorStats.parents.attend }}</span></p>
+                  <p class="text-[10px] text-gray-500 mt-1">欠席 {{ directorStats.parents.absent }} / 未定 {{ directorStats.parents.pending }}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">コーチ</p>
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-400">参加 <span class="text-xl font-black text-gray-900 dark:text-white">{{ directorStats.coaches.attend }}</span></p>
+                  <p class="text-[10px] text-gray-500 mt-1">欠席 {{ directorStats.coaches.absent }} / 未定 {{ directorStats.coaches.pending }}</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold mb-1">他</p>
+                  <p class="text-xs font-medium text-gray-600 dark:text-gray-400">参加 <span class="text-xl font-black text-gray-900 dark:text-white">{{ directorStats.family.attend }}</span></p>
+                  <p class="text-[10px] text-gray-500 mt-1">欠席 {{ directorStats.family.absent }} / 未定 {{ directorStats.family.pending }}</p>
+                </div>
               </div>
             </div>
             
             <div class="space-y-6">
-              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.players" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.parents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.coaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div v-if="directorLists.others.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (家族・OB等)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.others" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span></div></div>
+              <div v-if="directorLists.attendPlayers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendPlayers" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.attendParents.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendParents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.attendCoaches.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendCoaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.attendOthers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (参加者のみ)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendOthers" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span></div></div>
+              
+              <div v-if="directorLists.absentPlayers.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❌ 欠席選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentPlayers" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.absentCoaches.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center">❌ 欠席コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentCoaches" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              
+              <div v-if="directorLists.pendingAll.length > 0"><h4 class="text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❓ 未定</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.pendingAll" :key="p.id" class="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-[10px] ml-1 opacity-70">({{ p.role }})</span></span></div></div>
             </div>
           </div>
         </div>
@@ -592,7 +613,6 @@
         const errorMessage = ref('');
         const profile = ref(null);
 
-        // ダークモードの状態管理
         const isDarkMode = ref(false);
         const toggleDarkMode = () => {
           isDarkMode.value = !isDarkMode.value;
@@ -645,7 +665,8 @@
         ];
 
         const visibleTabs = computed(() => {
-          if (myRole.value === '監督') return allTabDefinitions.filter(t => ['create_event', 'events', 'director', 'share'].includes(t.id));
+          // 修正：監督にも view_allocation を表示させる
+          if (myRole.value === '監督') return ['create_event', 'events', 'director', 'view_allocation', 'share'].map(id => allTabDefinitions.find(t => t.id === id));
           if (myPermission.value === '配車' || myPermission.value === '運営') return ['events', 'family', 'director', 'allocation', 'view_allocation', 'share'].map(id => allTabDefinitions.find(t => t.id === id));
           return allTabDefinitions.filter(t => ['events', 'family', 'director', 'view_allocation'].includes(t.id));
         });
@@ -689,7 +710,6 @@
         const toggleScheduleGrade = (sched, g) => {
           if (!sched.grades) sched.grades = [];
           if (sched.grades.includes('全学年')) { sched.grades = []; }
-          
           if (sched.grades.includes(g)) { 
             sched.grades = sched.grades.filter(item => item !== g); 
             if (sched.grades.length === 0) sched.grades = ['全学年'];
@@ -795,11 +815,13 @@
 
         const getUniqueUrls = (schedules) => { if(!schedules) return []; const urls = schedules.map(s => s.mapUrl).filter(u => u); return [...new Set(urls)]; };
 
+        // 修正：LINE文面のスッキリ化と区切り線の追加
         const generatedScheduleText = computed(() => {
           if (selectedShareEvents.value.length === 0) return '';
           let text = '週末の予定をお知らせします。\n\n';
           const targetEvents = sortedEvents.value.filter(e => selectedShareEvents.value.includes(e.id));
           targetEvents.forEach(e => {
+            text += `━━━━━━━━━━━━━━━━━━━\n`;
             text += `◆${formatDate(e.date)} ${e.title}\n`;
             if (e.departureTime || e.gatherTime) {
               const depLoc = e.depLocation ? `@${e.depLocation}` : '';
@@ -807,7 +829,6 @@
               const gather = e.gatherTime ? `集合${formatTime(e.gatherTime)}` : '';
               const slash = (depTime && gather) ? ' / ' : '';
               text += `【集合】${depTime}${slash}${gather}${depLoc}\n`;
-              if (e.depMapUrl) text += `📍出発MAP: ${e.depMapUrl}\n`;
             }
             if (e.schedules && e.schedules.length > 0) {
               text += `【予定】\n`;
@@ -817,15 +838,14 @@
                 const locStr = s.location ? `@${s.location}` : '';
                 text += `・${gradeStr}${timeStr}${locStr}\n`;
               });
-              const uniqueUrls = getUniqueUrls(e.schedules);
-              uniqueUrls.forEach((url, i) => { text += `📍MAP${uniqueUrls.length > 1 ? i+1 : ''}: ${url}\n`; });
             }
             if (e.items) text += `【持物】${e.items}\n`;
             if (e.comment) text += `【監督より】${e.comment}\n`;
             if (e.notes) text += `【備考】${e.notes}\n`;
             text += '\n';
           });
-          text += '👇 出欠入力・詳細はこちら 👇\n'; text += APP_URL;
+          text += `━━━━━━━━━━━━━━━━━━━\n\n`;
+          text += '👇 詳細なMAPや配車確認、出欠入力はこちら 👇\n'; text += APP_URL;
           return text;
         });
 
@@ -946,7 +966,7 @@
             action: 'updateEvent', data: {
               eventId: editForm.eventId, eventType: typeStr, eventTitle: fullTitle, date: editForm.date,
               depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
-              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
+              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes, grades: editForm.grades
             }
           };
           try { 
@@ -988,29 +1008,37 @@
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
         };
 
-        // ★出欠サマリーの計算ロジック（監督を除外し、コーチを追加）
+        // 修正：出欠サマリーの細分化計算ロジック（参加・欠席・未定）
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && getUserRole(r.userId) !== '監督');
-          return { 
-            total: participants.length, 
-            players: participants.filter(p => getUserRole(p.userId) === '選手').length, 
-            parents: participants.filter(p => getUserRole(p.userId).includes('保護者')).length, 
-            coaches: participants.filter(p => getUserRole(p.userId) === 'コーチ').length, 
-            family: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB' || getUserRole(p.userId) === '一般').length 
+          const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
+          const count = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).length;
+          
+          return {
+            total: list.length,
+            players: { attend: count('参加', r => r === '選手'), absent: count('不参加', r => r === '選手'), pending: count('未定', r => r === '選手') },
+            parents: { attend: count('参加', r => r.includes('保護者')), absent: count('不参加', r => r.includes('保護者')), pending: count('未定', r => r.includes('保護者')) },
+            coaches: { attend: count('参加', r => r === 'コーチ'), absent: count('不参加', r => r === 'コーチ'), pending: count('未定', r => r === 'コーチ') },
+            family: { attend: count('参加', r => r === '家族' || r === 'OB' || r === '一般'), absent: count('不参加', r => r === '家族' || r === 'OB' || r === '一般'), pending: count('未定', r => r === '家族' || r === 'OB' || r === '一般') }
           };
         });
+
+        // 修正：名前リストのカテゴリ分け
         const directorLists = computed(() => {
-          const participants = currentEventAttendance.value.filter(r => r.status === '参加' && !r.isDummy && getUserRole(r.userId) !== '監督');
-          return { 
-            players: participants.filter(p => getUserRole(p.userId) === '選手'), 
-            parents: participants.filter(p => getUserRole(p.userId).includes('保護者')),
-            coaches: participants.filter(p => getUserRole(p.userId) === 'コーチ'),
-            others: participants.filter(p => getUserRole(p.userId) === '家族' || getUserRole(p.userId) === 'OB' || getUserRole(p.userId) === '一般').map(p => ({...p, role: getUserRole(p.userId)})) 
+          const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
+          const filterList = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).map(p => ({...p, role: getUserRole(p.userId)}));
+          
+          return {
+            attendPlayers: filterList('参加', r => r === '選手'),
+            attendParents: filterList('参加', r => r.includes('保護者')),
+            attendCoaches: filterList('参加', r => r === 'コーチ'),
+            attendOthers: filterList('参加', r => r === '家族' || r === 'OB' || r === '一般'),
+            absentPlayers: filterList('不参加', r => r === '選手'),
+            absentCoaches: filterList('不参加', r => r === 'コーチ'),
+            pendingAll: filterList('未定', () => true)
           };
         });
         
-        // ★配車管理の車両と荷物の計算ロジック
         const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || (r.isDummy && r.carStatus === '可')));
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => (r.status === '参加' && !r.isDummy && !r.assignTo) || (r.isDummy && r.carStatus === '不可' && !r.assignTo)));
         
