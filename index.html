@@ -41,15 +41,24 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-ky-black dark:text-ky-white font-sans antialiased" :class="{'modal-open': isEditing}">
   <div id="app" v-cloak>
-    <header class="bg-white dark:bg-ky-black p-4 sticky top-0 z-50 border-b border-ky-lightpink dark:border-ky-darkpink shadow-sm dark:shadow-[0_4px_15px_rgba(255,95,227,0.1)] flex justify-between items-center">
-      <h1 class="text-lg font-bold flex items-center tracking-wider text-gray-900 dark:text-ky-white">
+    <header class="bg-white dark:bg-ky-black p-3 sticky top-0 z-50 border-b border-ky-lightpink dark:border-ky-darkpink shadow-sm dark:shadow-[0_4px_15px_rgba(255,95,227,0.1)] flex flex-wrap justify-between items-center gap-y-2">
+      <h1 class="text-base font-bold flex items-center tracking-tight text-gray-900 dark:text-ky-white">
         <img src="./logo.webp" alt="ロゴ" class="w-7 h-7 object-contain mr-2">
-        川崎ヤング 出欠/配車
+        川崎ヤング
       </h1>
-      <!-- ダークモード切り替えスイッチ -->
-      <button @click="toggleDarkMode" class="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-xl shadow-inner transition">
-        {{ isDarkMode ? '🌙' : '☀️' }}
-      </button>
+      
+      <div class="flex items-center space-x-2">
+        <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700 shadow-inner">
+          <span class="text-[10px] px-1.5 text-gray-500 dark:text-gray-400 font-bold">文字</span>
+          <button @click="updateFontSize('small')" :class="fontSize === 'small' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'" class="px-2 py-1 text-[10px] rounded-md transition-all font-bold">小</button>
+          <button @click="updateFontSize('medium')" :class="fontSize === 'medium' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'" class="px-2 py-1 text-[10px] rounded-md transition-all font-bold">中</button>
+          <button @click="updateFontSize('large')" :class="fontSize === 'large' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'" class="px-2 py-1 text-[10px] rounded-md transition-all font-bold">大</button>
+        </div>
+
+        <button @click="toggleDarkMode" class="flex items-center space-x-1 px-2 py-1 rounded-lg border transition shadow-sm" :class="isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-yellow-50 border-yellow-200 text-gray-700'">
+          <span class="text-sm">{{ isDarkMode ? '🌙' : '☀️' }}</span>
+        </button>
+      </div>
     </header>
 
     <div v-if="customAlert.show" class="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center px-4">
@@ -604,11 +613,10 @@
 
     createApp({
       setup() {
-        // ⚠️【必須】以下3つを必ずご自身の環境に合わせて書き換えてください！
+        // ⚠️【必須】環境に合わせて書き換えてください！
         const LIFF_ID = "2009768140-ewTNX7NS"; 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxrdtozOTr3Iqul8l_aT6kSOPKWgJBBQb1WE8ozCeEOwdAWSqedvkEmwMfdBgJxKF4x/exec";
-        // ★修正：LINEのトークから外部ブラウザへ飛ばず、LINEアプリ内で直接開くようにLIFFのURLに変更
-        const APP_URL = "https://liff.line.me/2009768140-ewTNX7NS";
+        const APP_URL = "https://liff.line.me/2009768140-ewTNX7NS"; 
 
         const appState = ref('loading'); 
         const isDashboardLoaded = ref(false); 
@@ -616,21 +624,40 @@
         const errorMessage = ref('');
         const profile = ref(null);
 
+        // --- 設定管理 (文字サイズ・ダークモード) ---
         const isDarkMode = ref(false);
+        const fontSize = ref('large'); // デフォルトは大サイズ
+
+        // 文字サイズに応じたルートフォントサイズ（画面全体のスケール）
+        const rootFontSize = computed(() => {
+          if (fontSize.value === 'small') return '13px';  // 小サイズ
+          if (fontSize.value === 'medium') return '15px'; // 中サイズ（当初のサイズ感）
+          return '17px'; // 大サイズ（現在のサイズ感）
+        });
+
         const toggleDarkMode = () => {
           isDarkMode.value = !isDarkMode.value;
+          applyTheme();
+          localStorage.setItem('ky_theme', isDarkMode.value ? 'dark' : 'light');
+        };
+
+        const applyTheme = () => {
           if (isDarkMode.value) {
             document.documentElement.classList.add('dark');
-            localStorage.setItem('ky_theme', 'dark');
           } else {
             document.documentElement.classList.remove('dark');
-            localStorage.setItem('ky_theme', 'light');
           }
         };
 
+        const updateFontSize = (size) => {
+          fontSize.value = size;
+          document.documentElement.style.fontSize = rootFontSize.value;
+          localStorage.setItem('ky_font_size', size);
+        };
+
+        // --- プログレスバー制御 ---
         const loadingProgress = ref(0);
         let progressInterval = null;
-
         const startLoadingProgress = () => {
           loadingProgress.value = 0; loadingMessage.value = 'システム準備中...';
           if (progressInterval) clearInterval(progressInterval);
@@ -643,16 +670,15 @@
             }
           }, 150);
         };
-        
         const finishLoadingProgress = (callback) => {
           if (progressInterval) clearInterval(progressInterval);
           loadingProgress.value = 100; loadingMessage.value = '完了しました！';
           setTimeout(() => { if (callback) callback(); }, 300);
         };
 
+        // --- タブ・状態管理 ---
         const currentTab = ref('events'); 
         const globalEventId = ref(''); 
-
         const myFamilyId = ref('');
         const myRole = ref('');
         const myPermission = ref('');
@@ -668,7 +694,6 @@
         ];
 
         const visibleTabs = computed(() => {
-          // 修正：監督にも view_allocation を表示させる
           if (myRole.value === '監督') return ['create_event', 'events', 'director', 'view_allocation', 'share'].map(id => allTabDefinitions.find(t => t.id === id));
           if (myPermission.value === '配車' || myPermission.value === '運営') return ['events', 'family', 'director', 'allocation', 'view_allocation', 'share'].map(id => allTabDefinitions.find(t => t.id === id));
           return allTabDefinitions.filter(t => ['events', 'family', 'director', 'view_allocation'].includes(t.id));
@@ -708,6 +733,7 @@
         const isSavingEdit = ref(false);
         const editForm = reactive({ eventId: '', types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
+        // --- イベント・UI操作ロジック ---
         const toggleEventType = (form, t) => { if (form.types.includes(t)) { form.types = form.types.filter(item => item !== t); } else { form.types.push(t); } };
         
         const toggleScheduleGrade = (sched, g) => {
@@ -735,11 +761,17 @@
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
         const initLiff = async () => {
+          // 保存済み設定の復元
           const savedTheme = localStorage.getItem('ky_theme');
-          if (savedTheme === 'dark') {
-            isDarkMode.value = true; document.documentElement.classList.add('dark');
+          isDarkMode.value = savedTheme === 'dark';
+          applyTheme();
+
+          const savedSize = localStorage.getItem('ky_font_size');
+          if (savedSize) {
+            fontSize.value = savedSize;
+            document.documentElement.style.fontSize = rootFontSize.value;
           } else {
-            isDarkMode.value = false; document.documentElement.classList.remove('dark');
+            updateFontSize('large');
           }
           
           appState.value = 'loading'; startLoadingProgress();
@@ -791,10 +823,8 @@
               isDashboardLoaded.value = true;
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
-              
               if (appState.value === 'loading' && myRole.value === '監督') { currentTab.value = 'create_event'; }
               if (myRole.value !== '監督' && myPermission.value !== '運営') { shareType.value = 'allocation'; }
-              
               locationMaster.value = data.locations || []; departureMaster.value = data.departures || []; itemMaster.value = data.items || [];
               if (appState.value === 'loading') { finishLoadingProgress(() => { appState.value = 'dashboard'; }); } 
               else { appState.value = 'dashboard'; }
@@ -806,7 +836,6 @@
         const getRecord = (eventId, userId) => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === userId);
         const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
         const getCarStatus = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.carStatus : null; };
-
         const getOrCreateRecord = (eventId, member) => {
           let rec = getRecord(eventId, member.id);
           if (!rec) {
@@ -818,7 +847,7 @@
 
         const getUniqueUrls = (schedules) => { if(!schedules) return []; const urls = schedules.map(s => s.mapUrl).filter(u => u); return [...new Set(urls)]; };
 
-        // 修正：LINE文面のスッキリ化と区切り線の追加
+        // --- LINE共有ロジック (URL撤廃・区切り線) ---
         const generatedScheduleText = computed(() => {
           if (selectedShareEvents.value.length === 0) return '';
           let text = '週末の予定をお知らせします。\n\n';
@@ -865,22 +894,12 @@
             const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy) && !r.isExempt);
             if (carsInEvent.length === 0) { text += '※配車登録がありません\n\n'; return; }
             carsInEvent.forEach(car => {
-              let carName = car.isDummy ? car.name : '';
-              if (!car.isDummy) { const user = allUsers.value.find(u => u.id === car.userId); carName = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; }
+              let carName = car.isDummy ? car.name : (allUsers.value.find(u => u.id === car.userId)?.vehicleName || `${car.name}の車`);
               if (car.carStatus === '現地直行') carName += ' [現地直行]';
               text += `【${carName}】\n`;
               const passengers = getPassengersInCar(car.userId, targetEvent.id);
-              if (passengers.length === 0) { 
-                text += '・空席\n'; 
-              } else { 
-                passengers.forEach(p => { 
-                  if (!p.isDummy) {
-                    text += `・${p.name} (${getUserRole(p.userId)})\n`; 
-                  } else {
-                    text += `・${p.name} (荷物)\n`;
-                  }
-                }); 
-              }
+              if (passengers.length === 0) { text += '・空席\n'; } 
+              else { passengers.forEach(p => { text += p.isDummy ? `・${p.name} (荷物)\n` : `・${p.name} (${getUserRole(p.userId)})\n`; }); }
               text += '\n';
             });
           });
@@ -891,13 +910,14 @@
         watch(generatedAllocationText, (newVal) => { customAllocationText.value = newVal; });
 
         const shareToLine = async (textToShare) => {
-          if (!liff.isApiAvailable('shareTargetPicker')) { showAlert('【エラー】LINEアプリ内のトークルームからこのアプリを開いて実行してください。'); return; }
+          if (!liff.isApiAvailable('shareTargetPicker')) { showAlert('【エラー】LINEアプリ内のトークルームから実行してください。'); return; }
           try {
             const res = await liff.shareTargetPicker([{ type: 'text', text: textToShare }]);
             if (res) showAlert('LINEに送信しました！');
-          } catch (error) { console.error(error); showAlert('送信に失敗しました、またはキャンセルされました。'); }
+          } catch (error) { console.error(error); showAlert('送信に失敗したかキャンセルされました。'); }
         };
 
+        // --- データ更新ロジック ---
         const saveSingleAttendanceToGas = async (eventId, member, status, carStatus) => {
           const rec = getOrCreateRecord(eventId, member);
           const payload = { action: 'updateAttendance', data: { eventId, userId: member.id, name: member.name, status, carStatus, carComment: rec.carComment } };
@@ -906,31 +926,27 @@
         const setLocalAttendance = (eventId, member, status) => {
           let rec = getOrCreateRecord(eventId, member);
           rec.status = status;
-          if (myRole.value === '監督') { saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus); }
+          if (myRole.value === '監督') saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus);
         };
         const setLocalCarStatus = (eventId, member, carStatus) => {
           let rec = getOrCreateRecord(eventId, member);
           rec.carStatus = carStatus;
-          if (myRole.value === '監督') { saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus); }
+          if (myRole.value === '監督') saveSingleAttendanceToGas(eventId, member, rec.status, rec.carStatus);
         };
-
         const submitEventAttendance = async (eventId) => {
           appState.value = 'loading'; startLoadingProgress();
           const recordsToSave = familyMembers.value.map(member => getOrCreateRecord(eventId, member));
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: recordsToSave }) }); 
-            await fetchDashboardData(); 
-            showAlert('出欠データを確定しました！'); 
+            await fetchDashboardData(); showAlert('出欠データを確定しました！'); 
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
+        // --- 予定作成・編集 ---
         const formatTimeForInput = (timeStr) => { if(!timeStr) return ''; try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } catch(e){} return timeStr.substring(0,5); };
-        
         const openEditModal = (ev) => {
           const match = ev.title.match(/\((.*?)\)$/);
-          editForm.eventId = ev.id; 
-          editForm.types = ev.type ? ev.type.split('・') : ['練習']; 
-          editForm.detail = match ? match[1] : '';
+          editForm.eventId = ev.id; editForm.types = ev.type ? ev.type.split('・') : ['練習']; editForm.detail = match ? match[1] : '';
           const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
           editForm.depLocationSelect = ev.depLocation || ''; editForm.newDepLocationName = ''; editForm.newDepLocationUrl = '';
           editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
@@ -943,41 +959,39 @@
           isEditing.value = true;
         };
         const closeEditModal = () => { isEditing.value = false; };
-        
-        const getLocUrl = (name) => { const loc = locationMaster.value.find(l => l.name === name); return loc ? loc.url : ''; };
-        const getDepLocUrl = (name) => { const dep = departureMaster.value.find(d => d.name === name); return dep ? dep.url : ''; };
         const addSchedule = (targetForm) => { targetForm.schedules.push({ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }); };
         const removeSchedule = (targetForm, index) => { targetForm.schedules.splice(index, 1); };
         const formatSchedulesForGAS = (schedulesArray) => {
           return schedulesArray.map(s => {
             const isNew = s.locationSelect === 'NEW';
             const locName = isNew ? s.newLocationName : s.locationSelect;
-            const locUrl = isNew ? s.newLocationUrl : getLocUrl(s.locationSelect);
-            return { grades: s.grades || ['全学年'], startTime: s.startTime, endTime: s.endTime, location: locName, mapUrl: locUrl, isNewLocation: isNew };
+            const locUrl = isNew ? s.newLocationUrl : locationMaster.value.find(l => l.name === s.locationSelect)?.url;
+            return { grades: s.grades || ['全学年'], startTime: s.startTime, endTime: s.endTime, location: locName, mapUrl: locUrl || '', isNewLocation: isNew };
           });
         };
 
         const submitEditEvent = async () => {
           appState.value = 'loading'; startLoadingProgress();
-          const isNewDepLoc = editForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? editForm.newDepLocationName : editForm.depLocationSelect; const depLocUrl = isNewDepLoc ? editForm.newDepLocationUrl : getDepLocUrl(editForm.depLocationSelect);
+          const isNewDepLoc = editForm.depLocationSelect === 'NEW'; 
+          const depLocName = isNewDepLoc ? editForm.newDepLocationName : editForm.depLocationSelect;
+          const depLocUrl = isNewDepLoc ? editForm.newDepLocationUrl : departureMaster.value.find(d => d.name === editForm.depLocationSelect)?.url;
           const finalSchedules = formatSchedulesForGAS(editForm.schedules);
           const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
           const typeStr = editForm.types.join('・');
-          const fullTitle = `${typeStr}@${primaryLoc}` + (editForm.detail ? ` (${editForm.detail})` : '');
-          
           const payload = {
             action: 'updateEvent', data: {
-              eventId: editForm.eventId, eventType: typeStr, eventTitle: fullTitle, date: editForm.date,
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
-              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes, grades: editForm.grades
+              eventId: editForm.eventId, eventType: typeStr, eventTitle: `${typeStr}@${primaryLoc}` + (editForm.detail ? ` (${editForm.detail})` : ''), date: editForm.date,
+              depLocationName: depLocName, depLocationUrl: depLocUrl || '', isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
+              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
           };
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
             closeEditModal(); await fetchDashboardData(); showAlert('修正を保存しました'); 
-          } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
+          } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラー'); }
         };
 
+        // --- 家族追加・削除 ---
         const addFamilyMember = async () => {
           if (!newMember.name) return;
           appState.value = 'loading'; startLoadingProgress();
@@ -985,38 +999,26 @@
             await fetch(GAS_URL, { 
               method: 'POST', 
               headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-              body: JSON.stringify({ 
-                action: 'addFamilyMember', 
-                data: { 
-                  name: newMember.name, 
-                  role: newMember.role, 
-                  familyId: myFamilyId.value,
-                  vehicleName: newMember.vehicleName,
-                  vehicleType: newMember.vehicleType,
-                  vehicleCapacity: newMember.vehicleCapacity
-                } 
-              }) 
+              body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value, vehicleName: newMember.vehicleName, vehicleType: newMember.vehicleType, vehicleCapacity: newMember.vehicleCapacity } }) 
             }); 
             newMember.name = ''; newMember.role = '選手'; newMember.vehicleName = ''; newMember.vehicleType = ''; newMember.vehicleCapacity = '';
             await fetchDashboardData(); showAlert('追加しました！'); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました。'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました'); }
         };
-
         const deleteFamilyMember = async (memberId, memberName) => {
-          if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
+          if (!confirm(`${memberName} を削除しますか？`)) return;
           appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
-            await fetchDashboardData(); showAlert(`${memberName} を削除しました。`); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
+            await fetchDashboardData(); showAlert(`${memberName} を削除しました`); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
-        // 修正：出欠サマリーの細分化計算ロジック（参加・欠席・未定）
+        // --- サマリー・計算ロジック ---
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
           const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
           const count = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).length;
-          
           return {
             total: list.length,
             players: { attend: count('参加', r => r === '選手'), absent: count('不参加', r => r === '選手'), pending: count('未定', r => r === '選手') },
@@ -1025,26 +1027,16 @@
             family: { attend: count('参加', r => r === '家族' || r === 'OB' || r === '一般'), absent: count('不参加', r => r === '家族' || r === 'OB' || r === '一般'), pending: count('未定', r => r === '家族' || r === 'OB' || r === '一般') }
           };
         });
-
-        // 修正：名前リストのカテゴリ分け
         const directorLists = computed(() => {
           const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
           const filterList = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).map(p => ({...p, role: getUserRole(p.userId)}));
-          
           return {
-            attendPlayers: filterList('参加', r => r === '選手'),
-            attendParents: filterList('参加', r => r.includes('保護者')),
-            attendCoaches: filterList('参加', r => r === 'コーチ'),
-            attendOthers: filterList('参加', r => r === '家族' || r === 'OB' || r === '一般'),
-            absentPlayers: filterList('不参加', r => r === '選手'),
-            absentCoaches: filterList('不参加', r => r === 'コーチ'),
-            pendingAll: filterList('未定', () => true)
+            attendPlayers: filterList('参加', r => r === '選手'), attendParents: filterList('参加', r => r.includes('保護者')), attendCoaches: filterList('参加', r => r === 'コーチ'), attendOthers: filterList('参加', r => r === '家族' || r === 'OB' || r === '一般'),
+            absentPlayers: filterList('不参加', r => r === '選手'), absentCoaches: filterList('不参加', r => r === 'コーチ'), pendingAll: filterList('未定', () => true)
           };
         });
-        
         const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || (r.isDummy && r.carStatus === '可')));
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => (r.status === '参加' && !r.isDummy && !r.assignTo) || (r.isDummy && r.carStatus === '不可' && !r.assignTo)));
-        
         const getVehicleDisplayName = (car) => {
           let cap = 0; let name = '';
           if (car.isDummy) { name = car.name; cap = Number(car.capacity) || 0; } else { const user = allUsers.value.find(u => u.id === car.userId); name = user && user.vehicleName ? user.vehicleName : `${car.name}の車`; cap = user ? Number(user.vehicleCapacity) || 0 : 0; }
@@ -1052,42 +1044,36 @@
           return `${name}${directLabel} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
         };
         const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy && r.carStatus === '可'));
-
         const addDummyVehicle = async () => {
           appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: dummyForm.type, capacity: dummyForm.capacity, isLuggage: false } }) }); 
-            dummyForm.capacity = ''; await fetchDashboardData(); showAlert('手配車両を追加しました！');
+            dummyForm.capacity = ''; await fetchDashboardData(); showAlert('手配車両を追加しました');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const addLuggage = async () => {
           appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'addDummyVehicle', data: { eventId: globalEventId.value, vehicleType: '選手の荷物', capacity: 0, isLuggage: true } }) }); 
-            await fetchDashboardData(); showAlert('荷物を乗車待ちに追加しました！');
+            await fetchDashboardData(); showAlert('荷物を追加しました');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const updateDummyVehicle = async (dummy) => {
-          if (dummy.carStatus === '不可') return; // 荷物は更新不可
-          if (!dummy.capacity) { showAlert('定員を入力してください。'); return; }
+          if (dummy.carStatus === '不可') return;
           appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId, capacity: dummy.capacity } }) });
-            await fetchDashboardData(); showAlert(`${dummy.name} の定員を更新しました！`);
+            await fetchDashboardData(); showAlert(`${dummy.name} の定員を更新しました`);
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const deleteDummyVehicle = async (dummy) => {
-          if (!confirm(`${dummy.name} を削除しますか？\n※既に配車されているメンバーがいる場合、未配車に戻ります。`)) return;
+          if (!confirm(`${dummy.name} を削除しますか？`)) return;
           appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteDummyVehicle', data: { eventId: globalEventId.value, dummyId: dummy.userId } }) });
-            await fetchDashboardData(); showAlert(`${dummy.name} を削除しました。`);
+            await fetchDashboardData(); showAlert('削除しました');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const executeAllocation = async () => {
           appState.value = 'loading'; startLoadingProgress();
           try {
@@ -1095,24 +1081,22 @@
             selectedPassengers.value = []; await fetchDashboardData(); showAlert('配車の割り当てが完了しました！');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const unassign = async (userId) => {
-          if(!confirm('このメンバーの配車を解除して、未定に戻しますか？')) return;
+          if(!confirm('配車を解除しますか？')) return;
           appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'unassignAllocation', data: { eventId: globalEventId.value, userId: userId } }) });
-            await fetchDashboardData(); showAlert('配車を解除し、乗車待ちに戻しました。');
+            await fetchDashboardData(); showAlert('解除しました');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
-
         const toggleCarExemption = async (car) => {
           const newExemptStatus = !car.isExempt;
           let carName = car.isDummy ? car.name : (allUsers.value.find(u => u.id === car.userId)?.vehicleName || 'この車');
-          if (newExemptStatus && !confirm(`${carName}を配車免除にしますか？\n※既に配車されている同乗者も乗車待ちに戻ります。`)) return;
+          if (newExemptStatus && !confirm(`${carName}を免除にしますか？`)) return;
           appState.value = 'loading'; startLoadingProgress();
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'toggleCarExemption', data: { eventId: globalEventId.value, userId: car.userId, isExempt: newExemptStatus } }) });
-            await fetchDashboardData(); showAlert(newExemptStatus ? 'この車両を配車免除に設定しました。' : '配車免除を解除し、運転手を再割り当てしました。');
+            await fetchDashboardData(); showAlert(newExemptStatus ? '免除に設定しました' : '免除を解除しました');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
@@ -1120,47 +1104,33 @@
           if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         });
         const addNewItem = (targetForm) => { if (targetForm.newItem && !itemMaster.value.includes(targetForm.newItem)) { itemMaster.value.push(targetForm.newItem); targetForm.selectedItems.push(targetForm.newItem); targetForm.newItem = ''; } };
-        
         const submitEvent = async () => {
           appState.value = 'loading'; startLoadingProgress();
-          const isNewDepLoc = evForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? evForm.newDepLocationName : evForm.depLocationSelect; const depLocUrl = isNewDepLoc ? evForm.newDepLocationUrl : getDepLocUrl(evForm.depLocationSelect);
           const finalSchedules = formatSchedulesForGAS(evForm.schedules);
-          const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
-          const typeStr = evForm.types.join('・');
-          const fullTitle = `${typeStr}@${primaryLoc}` + (evForm.detail ? ` (${evForm.detail})` : '');
-          
           const payload = {
             action: 'createEvent', data: {
-              eventType: typeStr, eventTitle: fullTitle, date: evForm.date, 
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
+              eventType: evForm.types.join('・'), eventTitle: `${evForm.types.join('・')}@${finalSchedules[0]?.location || ''}` + (evForm.detail ? ` (${evForm.detail})` : ''), date: evForm.date, 
+              depLocationName: evForm.depLocationSelect === 'NEW' ? evForm.newDepLocationName : evForm.depLocationSelect, depLocationUrl: evForm.depLocationSelect === 'NEW' ? evForm.newDepLocationUrl : departureMaster.value.find(d => d.name === evForm.depLocationSelect)?.url || '', isNewDepLocation: evForm.depLocationSelect === 'NEW', departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
               schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
             }
           };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
-            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
-            evForm.schedules = [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
-            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; evForm.types = ['練習'];
-            currentTab.value = 'events'; 
+            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.schedules = [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
+            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; currentTab.value = 'events'; 
             await fetchDashboardData(); showAlert('イベントを作成しました！');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
         const formatDate = (dateStr) => { if(!dateStr) return ''; const d = new Date(dateStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
         const formatTime = (timeStr) => { if(!timeStr) return ''; if (/^\d{1,2}:\d{2}/.test(timeStr)) return timeStr.substring(0, 5); try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch (e) {} return timeStr; };
+        const hasSubmittedAttendance = (eventId) => familyMembers.value.some(member => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === member.id) !== undefined);
 
         onMounted(() => { initLiff(); });
 
-        const hasSubmittedAttendance = (eventId) => {
-          return familyMembers.value.some(member => {
-            const rec = attendanceRecords.value.find(r => r.eventId === eventId && r.userId === member.id);
-            return rec !== undefined;
-          });
-        };
-
         return {
           appState, isDashboardLoaded, loadingMessage, errorMessage, profile, currentTab, globalEventId, sortedEvents,
-          hasSubmittedAttendance, getOrCreateRecord, isDarkMode, toggleDarkMode,
+          hasSubmittedAttendance, getOrCreateRecord, isDarkMode, toggleDarkMode, fontSize, updateFontSize,
           myRole, myPermission, allUsers, familyMembers, events, attendanceRecords, 
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
@@ -1169,7 +1139,7 @@
           directorStats, directorLists, dummyForm, dummyVehicles, addDummyVehicle, updateDummyVehicle, deleteDummyVehicle,
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign, addLuggage,
-          getLocUrl, computedGatherTime, addNewItem, submitEvent,
+          computedGatherTime, addNewItem, submitEvent,
           visibleTabs, toggleEventType, toggleScheduleGrade, autoResize, toggleCarExemption, 
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
@@ -1179,5 +1149,7 @@
       }
     }).mount('#app');
   </script>
+</body>
+</html>
 </body>
 </html>
