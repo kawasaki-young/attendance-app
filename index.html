@@ -393,15 +393,15 @@
             </div>
             
             <div class="space-y-6">
-              <div v-if="directorLists.attendPlayers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendPlayers" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div v-if="directorLists.attendParents.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendParents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div v-if="directorLists.attendCoaches.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendCoaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div v-if="directorLists.attendOthers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (参加者のみ)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendOthers" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span></div></div>
+              <div v-if="directorLists.attendPlayers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendPlayers" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.attendParents.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendParents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.attendCoaches.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendCoaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.attendOthers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (参加者のみ)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendOthers" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               
-              <div v-if="directorLists.absentPlayers.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❌ 欠席選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentPlayers" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
-              <div v-if="directorLists.absentCoaches.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center">❌ 欠席コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentCoaches" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }}</span></div></div>
+              <div v-if="directorLists.absentPlayers.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❌ 欠席選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentPlayers" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.absentCoaches.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center">❌ 欠席コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentCoaches" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               
-              <div v-if="directorLists.pendingAll.length > 0"><h4 class="text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❓ 未定</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.pendingAll" :key="p.id" class="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-900/50 text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">{{ p.name }} <span class="text-[10px] ml-1 opacity-70">({{ p.role }})</span></span></div></div>
+              <div v-if="directorLists.pendingAll.length > 0"><h4 class="text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❓ 未定</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.pendingAll" :key="p.id" class="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-[10px] ml-1 opacity-70">({{ p.role }})</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
             </div>
           </div>
         </div>
@@ -416,11 +416,14 @@
               <p v-if="unassignedPassengers.length === 0" class="text-sm text-green-600 font-bold text-center mt-6">✨ 全員の配車が完了しています！ ✨</p>
               <label v-for="passenger in unassignedPassengers" :key="passenger.userId" class="flex items-center space-x-3 p-3 bg-white dark:bg-[#222222] rounded-lg cursor-pointer border border-transparent shadow-sm hover:border-ky-lightpink transition">
                 <input type="checkbox" :value="passenger.userId" v-model="selectedPassengers" class="accent-ky-lightpink dark:accent-ky-darkpink w-5 h-5">
-                <span class="text-base font-bold flex-1 text-gray-900 dark:text-white">
-                  {{ passenger.name }} 
-                  <span v-if="!passenger.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(passenger.userId) }})</span>
-                  <span v-else class="text-xs text-orange-500 font-bold ml-1 border border-orange-300 bg-orange-50 dark:bg-transparent px-1 rounded">(荷物)</span>
-                </span>
+                <div class="flex-1 flex flex-col">
+                  <span class="text-base font-bold text-gray-900 dark:text-white">
+                    {{ passenger.name }} 
+                    <span v-if="!passenger.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(passenger.userId) }})</span>
+                    <span v-else class="text-xs text-orange-500 font-bold ml-1 border border-orange-300 bg-orange-50 dark:bg-transparent px-1 rounded">(荷物)</span>
+                  </span>
+                  <span v-if="passenger.carComment" class="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">💬 {{ passenger.carComment }}</span>
+                </div>
                 <button v-if="passenger.isDummy" @click.prevent="deleteDummyVehicle(passenger)" class="text-xs text-red-500 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-transparent px-2 py-1 rounded-md hover:bg-red-100 transition shadow-sm font-bold">削除</button>
               </label>
             </div>
@@ -447,9 +450,12 @@
                 </div>
                 <div v-if="car.carComment && !car.isExempt" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
                 <ul v-if="!car.isExempt" class="p-3 space-y-2">
-                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex justify-between items-center text-base px-3 py-2 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-gray-100 dark:border-transparent">
-                    <span class="font-bold text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></span>
-                    <button @click="unassign(p.userId)" class="text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition">解除</button>
+                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex justify-between items-center px-3 py-2 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-gray-100 dark:border-transparent">
+                    <div class="flex flex-col">
+                      <span class="font-bold text-base text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></span>
+                      <span v-if="p.carComment" class="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">💬 {{ p.carComment }}</span>
+                    </div>
+                    <button @click="unassign(p.userId)" class="text-xs font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition ml-2">解除</button>
                   </li>
                 </ul>
               </div>
@@ -464,14 +470,20 @@
               <div v-for="car in availableCars.filter(c => !c.isExempt)" :key="car.userId" class="bg-gray-50 dark:bg-[#1a1a1a] rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow-sm">
                 <div class="bg-gray-200 dark:bg-[#222222] px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center"><span class="font-bold text-base text-gray-900 dark:text-white">{{ getVehicleDisplayName(car) }}</span></div>
                 <div v-if="car.carComment" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
-                <ul class="p-3 space-y-1 text-base font-medium">
-                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="px-3 py-1.5 text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></li>
+                <ul class="p-3 space-y-2 font-medium">
+                  <li v-for="p in getPassengersInCar(car.userId, globalEventId)" :key="p.userId" class="flex flex-col px-3 py-2 bg-white dark:bg-[#111111] rounded-lg shadow-sm border border-gray-100 dark:border-transparent">
+                    <span class="text-base text-gray-800 dark:text-gray-200">{{ p.name }} <span v-if="!p.isDummy" class="text-xs text-gray-500 font-normal ml-1">({{ getUserRole(p.userId) }})</span><span v-else class="text-xs text-orange-500 font-bold ml-1">(荷物)</span></span>
+                    <span v-if="p.carComment" class="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">💬 {{ p.carComment }}</span>
+                  </li>
                 </ul>
               </div>
             </div>
             <h3 class="font-bold text-yellow-600 dark:text-yellow-500 mb-4 border-b border-gray-200 dark:border-gray-800 pb-2 text-base">配車待ち（未定）</h3>
             <div class="flex flex-wrap gap-2">
-              <span v-for="p in unassignedPassengers" :key="p.userId" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium px-3 py-1.5 rounded-lg shadow-sm">{{ p.name }}</span>
+              <span v-for="p in unassignedPassengers" :key="p.userId" class="flex flex-col bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-2 rounded-lg shadow-sm">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ p.name }}</span>
+                <span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span>
+              </span>
             </div>
           </div>
         </div>
