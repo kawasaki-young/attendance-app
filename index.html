@@ -261,21 +261,23 @@
               <template v-if="myRole !== '監督'">
                 <div v-for="member in familyMembers" :key="member.id" class="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                   <p class="font-bold text-lg mb-3 flex items-center"><span class="w-3 h-3 inline-block rounded-full bg-ky-lightpink dark:bg-ky-darkpink mr-3"></span>{{ member.name }} <span class="text-sm text-gray-500 font-normal ml-2">({{ member.role }})</span></p>
+                  
                   <div class="flex space-x-3 mb-4">
                     <button @click="setLocalAttendance(event.id, member, '参加')" :class="getAttendance(event.id, member.id) === '参加' ? 'bg-green-600 text-white border-green-600 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">参加</button>
                     <button @click="setLocalAttendance(event.id, member, '未定')" :class="getAttendance(event.id, member.id) === '未定' ? 'bg-yellow-500 text-gray-900 border-yellow-500 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">未定</button>
                     <button @click="setLocalAttendance(event.id, member, '不参加')" :class="getAttendance(event.id, member.id) === '不参加' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="flex-1 py-3 rounded-lg border text-sm font-bold transition">不参加</button>
                   </div>
+                  
+                  <div class="mb-4">
+                    <textarea v-model="getOrCreateRecord(event.id, member).carComment" rows="1" @input="autoResize" placeholder="連絡事項（例: 午後から参加、同乗希望、荷物あり等）" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-sm shadow-inner transition-colors"></textarea>
+                  </div>
+
                   <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                     <span class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">🚗 車出し可能ですか？</span>
                     <div class="flex space-x-2 w-full flex-wrap gap-y-2">
                       <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 可</button>
                       <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">現地直行</button>
                       <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 不可</button>
-                      
-                      <div v-if="member.canDrive && (getCarStatus(event.id, member.id) === '可' || getCarStatus(event.id, member.id) === '現地直行')" class="w-full mt-2">
-                        <textarea v-model="getOrCreateRecord(event.id, member).carComment" rows="1" @input="autoResize" placeholder="配車担当への連絡（例: 13時早退、荷物等）" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink text-sm shadow-inner"></textarea>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -605,7 +607,8 @@
         // ⚠️【必須】以下3つを必ずご自身の環境に合わせて書き換えてください！
         const LIFF_ID = "2009768140-ewTNX7NS"; 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxrdtozOTr3Iqul8l_aT6kSOPKWgJBBQb1WE8ozCeEOwdAWSqedvkEmwMfdBgJxKF4x/exec";
-        const APP_URL = "https://kawasaki-young.github.io/attendance-app/"; 
+        // ★修正：LINEのトークから外部ブラウザへ飛ばず、LINEアプリ内で直接開くようにLIFFのURLに変更
+        const APP_URL = "https://liff.line.me/2009768140-ewTNX7NS";
 
         const appState = ref('loading'); 
         const isDashboardLoaded = ref(false); 
