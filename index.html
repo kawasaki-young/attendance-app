@@ -10,15 +10,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { 
-      darkMode: 'class', // ダークモードをクラス切り替えに設定
+      darkMode: 'class', 
       theme: { 
         extend: { 
           colors: { 
             ky: { 
               black: '#000000', 
               white: '#FFFFFF', 
-              lightpink: '#F7ADC3', // ライトモード用ピンク
-              darkpink: '#FF5FE3',  // ダークモード用ピンク
+              lightpink: '#F7ADC3', 
+              darkpink: '#FF5FE3',  
               line: '#06C755' 
             } 
           } 
@@ -33,20 +33,18 @@
     body { -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    /* カレンダーアイコンの色反転設定 */
     .dark input[type="date"]::-webkit-calendar-picker-indicator, 
     .dark input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     body.modal-open { overflow: hidden; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-ky-black dark:text-ky-white font-sans antialiased" :class="{'modal-open': isEditing}">
+<body class="bg-gray-50 text-gray-800 dark:bg-ky-black dark:text-ky-white font-sans antialiased" :class="{'modal-open': isEditing || isEditingMember}">
   <div id="app" v-cloak>
     <header class="bg-white dark:bg-ky-black p-3 sticky top-0 z-50 border-b border-ky-lightpink dark:border-ky-darkpink shadow-sm dark:shadow-[0_4px_15px_rgba(255,95,227,0.1)] flex flex-wrap justify-between items-center gap-y-2">
       <h1 class="text-base font-bold flex items-center tracking-tight text-gray-900 dark:text-ky-white">
         <img src="./logo.webp" alt="ロゴ" class="w-7 h-7 object-contain mr-2">
         川崎ヤング
       </h1>
-      
       <div class="flex items-center space-x-2">
         <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700 shadow-inner">
           <span class="text-[10px] px-1.5 text-gray-500 dark:text-gray-400 font-bold">文字</span>
@@ -54,7 +52,6 @@
           <button @click="updateFontSize('medium')" :class="fontSize === 'medium' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'" class="px-2 py-1 text-[10px] rounded-md transition-all font-bold">中</button>
           <button @click="updateFontSize('large')" :class="fontSize === 'large' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'" class="px-2 py-1 text-[10px] rounded-md transition-all font-bold">大</button>
         </div>
-
         <button @click="toggleDarkMode" class="flex items-center space-x-1 px-2 py-1 rounded-lg border transition shadow-sm" :class="isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-yellow-50 border-yellow-200 text-gray-700'">
           <span class="text-sm">{{ isDarkMode ? '🌙' : '☀️' }}</span>
         </button>
@@ -71,7 +68,6 @@
     </div>
 
     <main class="container mx-auto px-4 py-6 pb-28 relative">
-      
       <div v-if="appState === 'error'" class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-500 rounded-xl p-6 text-red-800 dark:text-white mb-6 shadow-md">
         <h2 class="font-bold text-xl mb-2">⚠️ システムエラー</h2>
         <p class="text-base">{{ errorMessage }}</p>
@@ -113,7 +109,7 @@
           <div>
             <label class="block text-base font-bold text-gray-800 dark:text-gray-300 mb-2">チームでの役割 <span class="text-red-500">*</span></label>
             <select v-model="regForm.role" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-base">
-              <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手">選手</option><option value="家族">家族(兄弟など)</option>
+              <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手(3年)">選手(3年)</option><option value="選手(2年)">選手(2年)</option><option value="選手(1年)">選手(1年)</option><option value="家族">家族(兄弟など)</option>
             </select>
           </div>
           <div v-if="['保護者(父)', '保護者(母)', '監督', 'コーチ', 'OB'].includes(regForm.role)">
@@ -222,15 +218,16 @@
           </div>
         </div>
 
-        <div v-if="currentTab === 'events'" class="space-y-8">
+        <div v-if="currentTab === 'events'" class="space-y-10 relative">
           <div class="flex justify-end mb-4">
             <button @click="showPastEvents = !showPastEvents" class="text-xs text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
               {{ showPastEvents ? '▼ 過去の予定を隠す' : '▶︎ 過去の予定も表示' }}
             </button>
           </div>
           <div v-if="sortedEvents.length === 0" class="text-center py-12 text-gray-500 font-medium text-lg">表示できる予定がありません。</div>
-          <div v-for="event in sortedEvents" :key="event.id" class="bg-white dark:bg-[#111111] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg">
-            <div class="bg-gray-50 dark:bg-gradient-to-r dark:from-gray-900 dark:to-[#1a1a1a] p-5 md:p-6 border-b border-ky-lightpink dark:border-ky-darkpink/30">
+          
+          <div v-for="(event, index) in sortedEvents" :key="event.id" :class="index % 2 === 0 ? 'bg-white dark:bg-[#111111]' : 'bg-blue-50/50 dark:bg-[#16181d]'" class="rounded-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden shadow-xl mb-10">
+            <div class="bg-gray-100/80 dark:bg-gradient-to-r dark:from-gray-900 dark:to-[#1a1a1a] p-5 md:p-6 border-b-2 border-ky-lightpink/50 dark:border-ky-darkpink/30">
               <h3 class="text-xl font-bold text-gray-900 dark:text-ky-white mb-4">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
               <div class="space-y-3 text-base text-gray-700 dark:text-gray-300">
                 <div v-if="event.departureTime || event.gatherTime" class="flex items-start">
@@ -266,7 +263,7 @@
               </div>
             </div>
             
-            <div class="p-5 md:p-6 space-y-6">
+            <div class="p-5 md:p-6 space-y-6 bg-transparent">
               <template v-if="myRole !== '監督'">
                 <div v-for="member in familyMembers" :key="member.id" class="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                   <p class="font-bold text-lg mb-3 flex items-center"><span class="w-3 h-3 inline-block rounded-full bg-ky-lightpink dark:bg-ky-darkpink mr-3"></span>{{ member.name }} <span class="text-sm text-gray-500 font-normal ml-2">({{ member.role }})</span></p>
@@ -290,9 +287,9 @@
                     </div>
                   </div>
                 </div>
-                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id" class="w-full mt-6 bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-extrabold py-4 rounded-xl shadow-lg transition hover:opacity-90 flex justify-center items-center text-lg">
-                  <span v-if="isSubmittingEvent === event.id" class="animate-spin h-5 w-5 border-2 border-gray-900 rounded-full border-t-transparent mr-3"></span>
-                  {{ isSubmittingEvent === event.id ? '更新中...' : (hasSubmittedAttendance(event.id) ? '出欠を修正して更新' : '出欠を確定・送信') }}
+                <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id || isSubmittingAll" class="w-full mt-4 bg-gray-300 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-xl shadow-sm transition hover:opacity-90 flex justify-center items-center text-sm disabled:opacity-50 border border-gray-400 dark:border-gray-600">
+                  <span v-if="isSubmittingEvent === event.id" class="animate-spin h-4 w-4 border-2 border-gray-900 dark:border-white rounded-full border-t-transparent mr-2"></span>
+                  {{ isSubmittingEvent === event.id ? '更新中...' : 'この予定だけ送信する' }}
                 </button>
               </template>
               
@@ -301,6 +298,12 @@
               </button>
             </div>
           </div>
+          
+          <button v-if="currentTab === 'events' && myRole !== '監督' && sortedEvents.length > 0" @click="submitAllAttendance" :disabled="isSubmittingAll" class="fixed bottom-6 right-4 md:right-8 bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 w-[72px] h-[72px] rounded-full shadow-[0_6px_20px_rgba(247,173,195,0.7)] flex flex-col justify-center items-center z-[90] transition-transform hover:scale-105 disabled:opacity-50">
+            <span v-if="isSubmittingAll" class="animate-spin h-6 w-6 border-4 border-gray-900 rounded-full border-t-transparent mb-1"></span>
+            <span v-else class="text-3xl leading-none mb-1">📤</span>
+            <span class="text-[10px] font-extrabold leading-none">{{ isSubmittingAll ? '送信中' : '一括送信' }}</span>
+          </button>
         </div>
 
         <div v-if="currentTab === 'family'" class="space-y-8">
@@ -323,13 +326,14 @@
               <input v-model="newMember.name" type="text" required placeholder="氏名 (フルネーム)" class="w-full px-4 py-4 bg-white dark:bg-[#111111] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-ky-lightpink shadow-inner">
               <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">役割</label>
               <div class="grid grid-cols-2 gap-3">
-                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '選手' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="選手" class="hidden"> 選手</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '選手(3年)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="選手(3年)" class="hidden"> 選手(3年)</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '選手(2年)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="選手(2年)" class="hidden"> 選手(2年)</label>
+                <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '選手(1年)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="選手(1年)" class="hidden"> 選手(1年)</label>
                 <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '家族' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="家族" class="hidden"> 同乗家族</label>
                 <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '保護者(父)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="保護者(父)" class="hidden"> 保護者(父)</label>
                 <label class="text-center py-3 border rounded-xl cursor-pointer text-sm font-medium transition shadow-sm" :class="newMember.role === '保護者(母)' ? 'bg-ky-lightpink dark:bg-ky-darkpink/20 text-gray-900 dark:text-ky-darkpink border-ky-lightpink dark:border-ky-darkpink' : 'bg-white dark:bg-[#222222] border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400'"><input type="radio" v-model="newMember.role" value="保護者(母)" class="hidden"> 保護者(母)</label>
               </div>
 
-              <!-- 追加：保護者を追加する場合の車両入力 -->
               <div v-if="['保護者(父)', '保護者(母)'].includes(newMember.role)" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <label class="block text-sm font-bold text-ky-lightpink dark:text-ky-darkpink mb-3">車出し（配車）は可能ですか？</label>
                 <div class="space-y-3">
@@ -396,12 +400,12 @@
             </div>
             
             <div class="space-y-6">
-              <div v-if="directorLists.attendPlayers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendPlayers" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.attendPlayers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">⚾️ 参加選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendPlayers" :key="p.id" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-[10px] text-ky-lightpink dark:text-ky-darkpink ml-1">({{ p.role }})</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               <div v-if="directorLists.attendParents.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👨‍👩‍👦 参加保護者</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendParents" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               <div v-if="directorLists.attendCoaches.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">🧢 参加コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendCoaches" :key="p.id" class="border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               <div v-if="directorLists.attendOthers.length > 0"><h4 class="text-sm font-bold text-gray-600 dark:text-gray-400 mb-3 flex items-center">👥 他 (参加者のみ)</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.attendOthers" :key="p.id" class="border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#222222] text-gray-700 dark:text-gray-300 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-ky-lightpink dark:text-ky-darkpink ml-1">{{ p.role }}</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               
-              <div v-if="directorLists.absentPlayers.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❌ 欠席選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentPlayers" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
+              <div v-if="directorLists.absentPlayers.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❌ 欠席選手</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentPlayers" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-[10px] ml-1 opacity-80">({{ p.role }})</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               <div v-if="directorLists.absentCoaches.length > 0"><h4 class="text-sm font-bold text-red-600 dark:text-red-400 mb-3 flex items-center">❌ 欠席コーチ</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.absentCoaches" :key="p.id" class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }}</span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
               
               <div v-if="directorLists.pendingAll.length > 0"><h4 class="text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-3 flex items-center mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">❓ 未定</h4><div class="flex flex-wrap gap-2"><span v-for="p in directorLists.pendingAll" :key="p.id" class="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-900/50 text-xs px-3 py-2 rounded-lg font-medium shadow-sm flex flex-col"><span>{{ p.name }} <span class="text-[10px] ml-1 opacity-70">({{ p.role }})</span></span><span v-if="p.carComment" class="text-[10px] text-blue-600 dark:text-blue-400 mt-1">💬 {{ p.carComment }}</span></span></div></div>
@@ -491,77 +495,8 @@
           </div>
         </div>
 
-        <div v-if="currentTab === 'create_event'" class="space-y-8">
-          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-green-500 shadow-xl">
-            <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-3"><h2 class="text-xl font-bold text-green-600 dark:text-green-400">新しい予定を作成</h2></div>
-            <form @submit.prevent="submitEvent" class="space-y-6">
-              <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2">
-                  <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">種別 <span class="text-red-500">*</span></label>
-                  <div class="flex flex-wrap gap-3">
-                    <button v-for="t in ['練習','OP戦','公式戦','合宿','遠征']" :key="t" type="button" @click="toggleEventType(evForm, t)" :class="evForm.types.includes(t) ? 'bg-green-600 text-white font-bold shadow-md scale-105' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-transparent'" class="px-4 py-2 rounded-full text-sm transition">{{ t }}</button>
-                  </div>
-                </div>
-                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">日付 <span class="text-red-500">*</span></label><input v-model="evForm.date" type="date" required class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500 shadow-inner"></div>
-                <div><label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">大会名・補足 (任意)</label><input v-model="evForm.detail" type="text" placeholder="例: 春季大会 1回戦" class="w-full bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500 shadow-inner"></div>
-              </div>
-              
-              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm">
-                <h4 class="text-sm font-bold text-green-600 dark:text-green-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">【出発/集合】情報</h4>
-                <div>
-                  <select v-model="evForm.depLocationSelect" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-sm"><option value="">(指定なし / 予定場所へ直接)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
-                  <div v-if="evForm.depLocationSelect === 'NEW'" class="mt-3 space-y-3">
-                    <input v-model="evForm.newDepLocationName" type="text" placeholder="場所の名前" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">
-                    <input v-model="evForm.newDepLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">
-                  </div>
-                </div>
-                <div class="flex items-center justify-between bg-white dark:bg-transparent p-3 rounded-lg border border-gray-200 dark:border-transparent"><label class="text-sm font-bold text-gray-700 dark:text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-gray-50 dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"></div>
-                <div class="flex items-center justify-between bg-pink-50 dark:bg-gray-800/50 p-3 rounded-lg border border-pink-100 dark:border-transparent"><label class="text-sm font-bold text-ky-lightpink dark:text-ky-darkpink w-1/3">集合時間</label>
-                  <div class="w-2/3 flex space-x-2">
-                    <select v-model="evForm.gatherOffset" class="w-1/2 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm font-medium"><option value="0">同時</option><option value="5">5分前</option><option value="10">10分前</option><option value="15">15分前</option><option value="30">30分前</option></select>
-                    <input :value="computedGatherTime" type="time" disabled class="w-1/2 bg-gray-100 dark:bg-[#111111] text-ky-lightpink dark:text-ky-darkpink font-bold px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base text-center">
-                  </div>
-                </div>
-              </div>
-              
-              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm">
-                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-3"><h4 class="text-sm font-bold text-green-600 dark:text-green-400">【予定】活動内容</h4><button type="button" @click="addSchedule(evForm)" class="text-xs font-bold bg-green-100 text-green-700 border border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-transparent px-3 py-1.5 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 shadow-sm">+ 追加</button></div>
-                <div v-for="(sched, index) in evForm.schedules" :key="index" class="p-4 bg-white dark:bg-[#222222] rounded-xl border border-gray-300 dark:border-gray-700 relative shadow-sm">
-                  <button v-if="evForm.schedules.length > 1" type="button" @click="removeSchedule(evForm, index)" class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-3 border-b border-gray-100 dark:border-gray-700/50 pb-1">予定 {{ index + 1 }}</p>
-                  <div class="space-y-4">
-                    <div class="flex flex-wrap gap-2 mb-3">
-                      <button v-for="g in ['3年','2年','1年']" :key="g" type="button" @click="toggleScheduleGrade(sched, g)" :class="sched.grades && sched.grades.includes(g) ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">{{ g }}</button>
-                      <button type="button" @click="sched.grades=['全学年']" :class="!sched.grades || sched.grades.includes('全学年') ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-50 dark:bg-[#111111] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700'" class="px-4 py-1.5 rounded-full text-xs font-medium transition border">全学年</button>
-                    </div>
-                    <select v-model="sched.locationSelect" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-green-500"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
-                    <div v-if="sched.locationSelect === 'NEW'" class="space-y-3"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
-                    <div class="flex items-center space-x-3 bg-gray-50 dark:bg-transparent p-2 rounded-lg border border-gray-200 dark:border-transparent">
-                      <div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div>
-                      <span class="text-gray-400 font-bold mt-5">〜</span>
-                      <div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-3">【持物】 (複数選択可)</label>
-                <div class="flex flex-wrap gap-2.5 mb-4"><label v-for="item in itemMaster" :key="item" class="flex items-center space-x-2 bg-white dark:bg-[#222222] px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 cursor-pointer shadow-sm hover:border-green-500 transition"><input type="checkbox" :value="item" v-model="evForm.selectedItems" class="accent-green-600 w-4 h-4"><span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ item }}</span></label></div>
-                <div class="flex space-x-3"><input v-model="evForm.newItem" type="text" placeholder="その他追加..." class="flex-1 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm shadow-sm"><button type="button" @click="addNewItem(evForm)" :disabled="!evForm.newItem" class="bg-gray-700 text-white font-bold px-5 py-3 text-sm rounded-lg disabled:opacity-50 shadow">追加</button></div>
-              </div>
-              
-              <div class="space-y-4">
-                <textarea v-model="evForm.comment" @input="autoResize" rows="2" placeholder="監督コメント" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-inner focus:ring-2 focus:ring-green-500"></textarea>
-                <textarea v-model="evForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-inner focus:ring-2 focus:ring-green-500"></textarea>
-              </div>
-              <button type="submit" :disabled="isCreating" class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg mt-4">{{ isCreating ? '作成中...' : '予定を作成する' }}</button>
-            </form>
-          </div>
-        </div>
-
         <div v-if="isEditingMember" class="fixed inset-0 bg-black/80 dark:bg-black/90 z-[100] overflow-y-auto px-4 py-8 flex justify-center items-center backdrop-blur-sm">
-          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-blue-600 shadow-2xl w-full max-w-md relative">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-blue-600 shadow-2xl w-full max-w-md relative mt-4">
             <button @click="closeMemberEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white text-3xl font-bold leading-none bg-gray-100 dark:bg-gray-800 w-10 h-10 rounded-full pb-1">&times;</button>
             <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400 mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">登録情報の編集</h2>
             <form @submit.prevent="submitMemberEdit" class="space-y-5">
@@ -572,7 +507,7 @@
               <div>
                 <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">役割</label>
                 <select v-model="editMemberForm.role" required class="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500 shadow-inner">
-                  <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手">選手</option><option value="家族">家族(兄弟など)</option>
+                  <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手(3年)">選手(3年)</option><option value="選手(2年)">選手(2年)</option><option value="選手(1年)">選手(1年)</option><option value="家族">家族(兄弟など)</option>
                 </select>
               </div>
               <div v-if="['保護者(父)', '保護者(母)', '監督', 'コーチ', 'OB'].includes(editMemberForm.role)" class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-700 mt-2">
@@ -627,7 +562,7 @@
                     </div>
                     <select v-model="sched.locationSelect" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"><option disabled value="">場所を選択</option><option value="NEW">＋ 新しい場所を登録</option><option v-for="loc in locationMaster" :key="loc.name" :value="loc.name">{{ loc.name }}</option></select>
                     <div v-if="sched.locationSelect === 'NEW'" class="space-y-3"><input v-model="sched.newLocationName" type="text" placeholder="名前" required class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="sched.newLocationUrl" type="url" placeholder="Google Map URL" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
-                    <div class="flex items-center space-x-3"><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">開始</label><input v-model="sched.startTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div><span class="text-gray-400 font-bold mt-5">〜</span><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">終了</label><input v-model="sched.endTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div></div>
+                    <div class="flex items-center space-x-3"><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">開始(G-in)</label><input v-model="sched.startTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div><span class="text-gray-400 font-bold mt-5">〜</span><div class="flex-1"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">終了(目安)</label><input v-model="sched.endTime" type="time" class="w-full bg-white dark:bg-[#111111] text-gray-900 dark:text-white px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold shadow-sm"></div></div>
                   </div>
                 </div>
               </div>
@@ -659,7 +594,6 @@
 
     createApp({
       setup() {
-        // ⚠️【必須】環境に合わせて書き換えてください！
         const LIFF_ID = "2009768140-ewTNX7NS"; 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxrdtozOTr3Iqul8l_aT6kSOPKWgJBBQb1WE8ozCeEOwdAWSqedvkEmwMfdBgJxKF4x/exec";
         const APP_URL = "https://liff.line.me/2009768140-ewTNX7NS"; 
@@ -670,15 +604,13 @@
         const errorMessage = ref('');
         const profile = ref(null);
 
-        // --- 設定管理 (文字サイズ・ダークモード) ---
         const isDarkMode = ref(false);
-        const fontSize = ref('large'); // デフォルトは大サイズ
+        const fontSize = ref('large'); 
 
-        // 文字サイズに応じたルートフォントサイズ（画面全体のスケール）
         const rootFontSize = computed(() => {
-          if (fontSize.value === 'small') return '13px';  // 小サイズ
-          if (fontSize.value === 'medium') return '15px'; // 中サイズ（当初のサイズ感）
-          return '17px'; // 大サイズ（現在のサイズ感）
+          if (fontSize.value === 'small') return '13px';  
+          if (fontSize.value === 'medium') return '15px'; 
+          return '17px'; 
         });
 
         const toggleDarkMode = () => {
@@ -688,11 +620,8 @@
         };
 
         const applyTheme = () => {
-          if (isDarkMode.value) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          if (isDarkMode.value) { document.documentElement.classList.add('dark'); } 
+          else { document.documentElement.classList.remove('dark'); }
         };
 
         const updateFontSize = (size) => {
@@ -701,7 +630,6 @@
           localStorage.setItem('ky_font_size', size);
         };
 
-        // --- プログレスバー制御 ---
         const loadingProgress = ref(0);
         let progressInterval = null;
         const startLoadingProgress = () => {
@@ -722,7 +650,6 @@
           setTimeout(() => { if (callback) callback(); }, 300);
         };
 
-        // --- タブ・状態管理 ---
         const currentTab = ref('events'); 
         const globalEventId = ref(''); 
         const myFamilyId = ref('');
@@ -763,9 +690,10 @@
         const customScheduleText = ref('');
         const customAllocationText = ref('');
 
-        const newMember = reactive({ name: '', role: '選手', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
+        const newMember = reactive({ name: '', role: '選手(1年)', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
         const isSaving = ref(false);
         const isSubmittingEvent = ref('');
+        const isSubmittingAll = ref(false);
 
         const selectedPassengers = ref([]);
         const targetVehicleId = ref('');
@@ -779,7 +707,6 @@
         const isSavingEdit = ref(false);
         const editForm = reactive({ eventId: '', types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
-        // --- イベント・UI操作ロジック ---
         const toggleEventType = (form, t) => { if (form.types.includes(t)) { form.types = form.types.filter(item => item !== t); } else { form.types.push(t); } };
         
         const toggleScheduleGrade = (sched, g) => {
@@ -807,7 +734,6 @@
         const handleError = (msg, error) => { console.error(error); errorMessage.value = `${msg}: ${error ? error.message || JSON.stringify(error) : ''}`; appState.value = 'error'; };
 
         const initLiff = async () => {
-          // 保存済み設定の復元
           const savedTheme = localStorage.getItem('ky_theme');
           isDarkMode.value = savedTheme === 'dark';
           applyTheme();
@@ -869,8 +795,10 @@
               isDashboardLoaded.value = true;
               familyMembers.value = data.familyMembers; events.value = data.events; attendanceRecords.value = data.attendance;
               myFamilyId.value = data.myFamilyId; allUsers.value = data.allUsers; myRole.value = data.myRole; myPermission.value = data.myPermission;
+              
               if (appState.value === 'loading' && myRole.value === '監督') { currentTab.value = 'create_event'; }
               if (myRole.value !== '監督' && myPermission.value !== '運営') { shareType.value = 'allocation'; }
+              
               locationMaster.value = data.locations || []; departureMaster.value = data.departures || []; itemMaster.value = data.items || [];
               if (appState.value === 'loading') { finishLoadingProgress(() => { appState.value = 'dashboard'; }); } 
               else { appState.value = 'dashboard'; }
@@ -882,6 +810,7 @@
         const getRecord = (eventId, userId) => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === userId);
         const getAttendance = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.status : null; };
         const getCarStatus = (eventId, userId) => { const r = getRecord(eventId, userId); return r ? r.carStatus : null; };
+
         const getOrCreateRecord = (eventId, member) => {
           let rec = getRecord(eventId, member.id);
           if (!rec) {
@@ -893,7 +822,6 @@
 
         const getUniqueUrls = (schedules) => { if(!schedules) return []; const urls = schedules.map(s => s.mapUrl).filter(u => u); return [...new Set(urls)]; };
 
-        // --- LINE共有ロジック (URL撤廃・区切り線) ---
         const generatedScheduleText = computed(() => {
           if (selectedShareEvents.value.length === 0) return '';
           let text = '週末の予定をお知らせします。\n\n';
@@ -944,8 +872,17 @@
               if (car.carStatus === '現地直行') carName += ' [現地直行]';
               text += `【${carName}】\n`;
               const passengers = getPassengersInCar(car.userId, targetEvent.id);
-              if (passengers.length === 0) { text += '・空席\n'; } 
-              else { passengers.forEach(p => { text += p.isDummy ? `・${p.name} (荷物)\n` : `・${p.name} (${getUserRole(p.userId)})\n`; }); }
+              if (passengers.length === 0) { 
+                text += '・空席\n'; 
+              } else { 
+                passengers.forEach(p => { 
+                  if (!p.isDummy) {
+                    text += `・${p.name} (${getUserRole(p.userId)})\n`; 
+                  } else {
+                    text += `・${p.name} (荷物)\n`;
+                  }
+                }); 
+              }
               text += '\n';
             });
           });
@@ -963,7 +900,6 @@
           } catch (error) { console.error(error); showAlert('送信に失敗したかキャンセルされました。'); }
         };
 
-        // --- データ更新ロジック ---
         const saveSingleAttendanceToGas = async (eventId, member, status, carStatus) => {
           const rec = getOrCreateRecord(eventId, member);
           const payload = { action: 'updateAttendance', data: { eventId, userId: member.id, name: member.name, status, carStatus, carComment: rec.carComment } };
@@ -988,8 +924,20 @@
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
         };
 
-        // --- 予定作成・編集 ---
+        const submitAllAttendance = async () => {
+          isSubmittingAll.value = true; appState.value = 'loading'; startLoadingProgress();
+          let allRecordsToSave = [];
+          sortedEvents.value.forEach(event => {
+            familyMembers.value.forEach(member => { allRecordsToSave.push(getOrCreateRecord(event.id, member)); });
+          });
+          try {
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'saveEventAttendance', data: allRecordsToSave }) });
+            await fetchDashboardData(); showAlert('表示されているすべての予定の出欠を一括送信しました！');
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); } finally { isSubmittingAll.value = false; }
+        };
+
         const formatTimeForInput = (timeStr) => { if(!timeStr) return ''; try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } catch(e){} return timeStr.substring(0,5); };
+        
         const openEditModal = (ev) => {
           const match = ev.title.match(/\((.*?)\)$/);
           editForm.eventId = ev.id; editForm.types = ev.type ? ev.type.split('・') : ['練習']; editForm.detail = match ? match[1] : '';
@@ -1034,33 +982,9 @@
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
             closeEditModal(); await fetchDashboardData(); showAlert('修正を保存しました'); 
-          } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラー'); }
+          } catch (e) { appState.value = 'dashboard'; closeEditModal(); showAlert('通信エラーが発生しました'); }
         };
 
-        // --- 家族追加・削除 ---
-        const addFamilyMember = async () => {
-          if (!newMember.name) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try { 
-            await fetch(GAS_URL, { 
-              method: 'POST', 
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
-              body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value, vehicleName: newMember.vehicleName, vehicleType: newMember.vehicleType, vehicleCapacity: newMember.vehicleCapacity } }) 
-            }); 
-            newMember.name = ''; newMember.role = '選手'; newMember.vehicleName = ''; newMember.vehicleType = ''; newMember.vehicleCapacity = '';
-            await fetchDashboardData(); showAlert('追加しました！'); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました'); }
-        };
-        const deleteFamilyMember = async (memberId, memberName) => {
-          if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
-          appState.value = 'loading'; startLoadingProgress();
-          try { 
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
-            await fetchDashboardData(); showAlert(`${memberName} を削除しました。`); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
-        };
-
-        // --- 家族（本人）情報の編集ロジック ---
         const isEditingMember = ref(false);
         const isSavingMemberEdit = ref(false);
         const editMemberForm = reactive({ userId: '', name: '', role: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
@@ -1093,14 +1017,35 @@
           }
         };
 
-        // --- サマリー・計算ロジック ---
+        const addFamilyMember = async () => {
+          if (!newMember.name) return;
+          appState.value = 'loading'; startLoadingProgress();
+          try { 
+            await fetch(GAS_URL, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+              body: JSON.stringify({ action: 'addFamilyMember', data: { name: newMember.name, role: newMember.role, familyId: myFamilyId.value, vehicleName: newMember.vehicleName, vehicleType: newMember.vehicleType, vehicleCapacity: newMember.vehicleCapacity } }) 
+            }); 
+            newMember.name = ''; newMember.role = '選手(1年)'; newMember.vehicleName = ''; newMember.vehicleType = ''; newMember.vehicleCapacity = '';
+            await fetchDashboardData(); showAlert('追加しました！'); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました'); }
+        };
+        const deleteFamilyMember = async (memberId, memberName) => {
+          if (!confirm(`${memberName} を削除しますか？`)) return;
+          appState.value = 'loading'; startLoadingProgress();
+          try { 
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
+            await fetchDashboardData(); showAlert(`${memberName} を削除しました`); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
+        };
+
         const currentEventAttendance = computed(() => attendanceRecords.value.filter(r => r.eventId === globalEventId.value));
         const directorStats = computed(() => {
           const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
           const count = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).length;
           return {
             total: list.length,
-            players: { attend: count('参加', r => r === '選手'), absent: count('不参加', r => r === '選手'), pending: count('未定', r => r === '選手') },
+            players: { attend: count('参加', r => r.includes('選手')), absent: count('不参加', r => r.includes('選手')), pending: count('未定', r => r.includes('選手')) },
             parents: { attend: count('参加', r => r.includes('保護者')), absent: count('不参加', r => r.includes('保護者')), pending: count('未定', r => r.includes('保護者')) },
             coaches: { attend: count('参加', r => r === 'コーチ'), absent: count('不参加', r => r === 'コーチ'), pending: count('未定', r => r === 'コーチ') },
             family: { attend: count('参加', r => r === '家族' || r === 'OB' || r === '一般'), absent: count('不参加', r => r === '家族' || r === 'OB' || r === '一般'), pending: count('未定', r => r === '家族' || r === 'OB' || r === '一般') }
@@ -1110,10 +1055,11 @@
           const list = currentEventAttendance.value.filter(r => !r.isDummy && getUserRole(r.userId) !== '監督');
           const filterList = (status, roleCondition) => list.filter(r => r.status === status && roleCondition(getUserRole(r.userId))).map(p => ({...p, role: getUserRole(p.userId)}));
           return {
-            attendPlayers: filterList('参加', r => r === '選手'), attendParents: filterList('参加', r => r.includes('保護者')), attendCoaches: filterList('参加', r => r === 'コーチ'), attendOthers: filterList('参加', r => r === '家族' || r === 'OB' || r === '一般'),
-            absentPlayers: filterList('不参加', r => r === '選手'), absentCoaches: filterList('不参加', r => r === 'コーチ'), pendingAll: filterList('未定', () => true)
+            attendPlayers: filterList('参加', r => r.includes('選手')), attendParents: filterList('参加', r => r.includes('保護者')), attendCoaches: filterList('参加', r => r === 'コーチ'), attendOthers: filterList('参加', r => r === '家族' || r === 'OB' || r === '一般'),
+            absentPlayers: filterList('不参加', r => r.includes('選手')), absentCoaches: filterList('不参加', r => r === 'コーチ'), pendingAll: filterList('未定', () => true)
           };
         });
+
         const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || (r.isDummy && r.carStatus === '可')));
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => (r.status === '参加' && !r.isDummy && !r.assignTo) || (r.isDummy && r.carStatus === '不可' && !r.assignTo)));
         const getVehicleDisplayName = (car) => {
@@ -1123,6 +1069,7 @@
           return `${name}${directLabel} (定員${cap} / 残り${cap - getPassengersInCar(car.userId, globalEventId.value).length}席)`;
         };
         const dummyVehicles = computed(() => currentEventAttendance.value.filter(r => r.isDummy && r.carStatus === '可'));
+        
         const addDummyVehicle = async () => {
           appState.value = 'loading'; startLoadingProgress();
           try { 
@@ -1183,22 +1130,30 @@
           if (!evForm.departureTime) return ''; const [h, m] = evForm.departureTime.split(':').map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() - Number(evForm.gatherOffset)); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         });
         const addNewItem = (targetForm) => { if (targetForm.newItem && !itemMaster.value.includes(targetForm.newItem)) { itemMaster.value.push(targetForm.newItem); targetForm.selectedItems.push(targetForm.newItem); targetForm.newItem = ''; } };
+        
         const submitEvent = async () => {
           appState.value = 'loading'; startLoadingProgress();
+          const isNewDepLoc = evForm.depLocationSelect === 'NEW'; const depLocName = isNewDepLoc ? evForm.newDepLocationName : evForm.depLocationSelect; const depLocUrl = isNewDepLoc ? evForm.newDepLocationUrl : getDepLocUrl(evForm.depLocationSelect);
           const finalSchedules = formatSchedulesForGAS(evForm.schedules);
+          const primaryLoc = finalSchedules.length > 0 ? finalSchedules[0].location : '';
+          const typeStr = evForm.types.join('・');
+          const fullTitle = `${typeStr}@${primaryLoc}` + (evForm.detail ? ` (${evForm.detail})` : '');
+          
           const payload = {
             action: 'createEvent', data: {
-              eventType: evForm.types.join('・'), eventTitle: `${evForm.types.join('・')}@${finalSchedules[0]?.location || ''}` + (evForm.detail ? ` (${evForm.detail})` : ''), date: evForm.date, 
-              depLocationName: evForm.depLocationSelect === 'NEW' ? evForm.newDepLocationName : evForm.depLocationSelect, depLocationUrl: evForm.depLocationSelect === 'NEW' ? evForm.newDepLocationUrl : departureMaster.value.find(d => d.name === evForm.depLocationSelect)?.url || '', isNewDepLocation: evForm.depLocationSelect === 'NEW', departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
+              eventType: typeStr, eventTitle: fullTitle, date: evForm.date, 
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
               schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
             }
           };
           try {
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
-            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.schedules = [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
-            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; currentTab.value = 'events'; 
+            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
+            evForm.schedules = [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
+            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; evForm.types = ['練習'];
+            currentTab.value = 'events'; 
             await fetchDashboardData(); showAlert('イベントを作成しました！');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); }
         };
 
         const formatDate = (dateStr) => { if(!dateStr) return ''; const d = new Date(dateStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
@@ -1214,7 +1169,7 @@
           locationMaster, departureMaster, itemMaster, evForm, isCreating,
           regForm, availableFamilies, isRegistering, submitRegistration, checkUser,
           initLiff, formatDate, formatTime, getUserRole, getUniqueUrls,
-          getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, 
+          getAttendance, getCarStatus, setLocalAttendance, setLocalCarStatus, submitEventAttendance, submitAllAttendance, isSubmittingAll,
           directorStats, directorLists, dummyForm, dummyVehicles, addDummyVehicle, updateDummyVehicle, deleteDummyVehicle,
           unassignedPassengers, availableCars, targetVehicleId, selectedPassengers, isAllocating,
           getVehicleDisplayName, getPassengersInCar, executeAllocation, unassign, addLuggage,
@@ -1223,13 +1178,9 @@
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           newMember, isSaving, isSubmittingEvent, addFamilyMember, deleteFamilyMember,
-          customAlert, closeAlert, showPastEvents, loadingProgress,
-          isEditingMember, isSavingMemberEdit, editMemberForm, openMemberEditModal, closeMemberEditModal, submitMemberEdit
+          isEditingMember, isSavingMemberEdit, editMemberForm, openMemberEditModal, closeMemberEditModal, submitMemberEdit,
+          customAlert, closeAlert, showPastEvents, loadingProgress
         };
       }
     }).mount('#app');
   </script>
-</body>
-</html>
-</body>
-</html>
