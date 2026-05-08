@@ -226,7 +226,7 @@
           </div>
           <div v-if="sortedEvents.length === 0" class="text-center py-12 text-gray-500 font-medium text-lg">表示できる予定がありません。</div>
           
-          <div v-for="(event, index) in sortedEvents" :key="event.id" :class="index % 2 === 0 ? 'bg-white dark:bg-[#111111]' : 'bg-blue-50/50 dark:bg-[#16181d]'" class="rounded-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden shadow-xl mb-10">
+          <div v-for="(event, index) in sortedEvents" :key="event.id" :class="index % 2 === 0 ? 'bg-white dark:bg-[#111111]' : 'bg-blue-50 dark:bg-[#1e222b]'" class="rounded-2xl border-2 border-gray-300 dark:border-gray-600 overflow-hidden shadow-2xl mb-20">
             <div class="bg-gray-100/80 dark:bg-gradient-to-r dark:from-gray-900 dark:to-[#1a1a1a] p-5 md:p-6 border-b-2 border-ky-lightpink/50 dark:border-ky-darkpink/30">
               <h3 class="text-xl font-bold text-gray-900 dark:text-ky-white mb-4">◆{{ formatDate(event.date) }} {{ event.title }}</h3>
               <div class="space-y-3 text-base text-gray-700 dark:text-gray-300">
