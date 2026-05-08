@@ -312,7 +312,10 @@
                   <span class="font-bold text-base text-gray-900 dark:text-white">{{ member.name }}</span>
                   <span class="text-xs px-2.5 py-1 bg-gray-200 dark:bg-gray-800 rounded-md text-gray-600 dark:text-gray-400 ml-3 font-medium">{{ member.role }}</span>
                 </div>
-                <button v-if="member.id !== profile?.userId" @click="deleteFamilyMember(member.id, member.name)" class="text-xs text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 transition font-bold shadow-sm">削除</button>
+                <div class="flex space-x-2">
+                  <button @click="openMemberEditModal(member)" class="text-xs text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-900/50 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/50 transition font-bold shadow-sm">編集</button>
+                  <button v-if="member.id !== profile?.userId" @click="deleteFamilyMember(member.id, member.name)" class="text-xs text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 bg-white dark:bg-transparent px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 transition font-bold shadow-sm">削除</button>
+                </div>
               </li>
             </ul>
             <h4 class="font-bold text-base text-gray-700 dark:text-gray-300 mb-4 mt-8 flex items-center"><span class="text-ky-lightpink dark:text-ky-darkpink text-xl mr-2">＋</span> 新しい家族を追加</h4>
@@ -553,6 +556,37 @@
                 <textarea v-model="evForm.notes" @input="autoResize" rows="1" placeholder="全体備考" class="w-full bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white px-5 py-4 rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base shadow-inner focus:ring-2 focus:ring-green-500"></textarea>
               </div>
               <button type="submit" :disabled="isCreating" class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-5 rounded-2xl shadow-lg transition disabled:opacity-50 text-lg mt-4">{{ isCreating ? '作成中...' : '予定を作成する' }}</button>
+            </form>
+          </div>
+        </div>
+
+        <div v-if="isEditingMember" class="fixed inset-0 bg-black/80 dark:bg-black/90 z-[100] overflow-y-auto px-4 py-8 flex justify-center items-center backdrop-blur-sm">
+          <div class="bg-white dark:bg-[#111111] rounded-2xl p-6 md:p-8 border-t-8 border-blue-600 shadow-2xl w-full max-w-md relative">
+            <button @click="closeMemberEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white text-3xl font-bold leading-none bg-gray-100 dark:bg-gray-800 w-10 h-10 rounded-full pb-1">&times;</button>
+            <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400 mb-6 border-b border-gray-200 dark:border-gray-800 pb-3">登録情報の編集</h2>
+            <form @submit.prevent="submitMemberEdit" class="space-y-5">
+              <div>
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">氏名 (フルネーム)</label>
+                <input v-model="editMemberForm.name" type="text" required class="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500 shadow-inner">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">役割</label>
+                <select v-model="editMemberForm.role" required class="w-full px-4 py-3 bg-gray-50 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none text-base focus:ring-2 focus:ring-blue-500 shadow-inner">
+                  <option value="保護者(父)">保護者(父)</option><option value="保護者(母)">保護者(母)</option><option value="監督">監督</option><option value="コーチ">コーチ</option><option value="OB">OB</option><option value="選手">選手</option><option value="家族">家族(兄弟など)</option>
+                </select>
+              </div>
+              <div v-if="['保護者(父)', '保護者(母)', '監督', 'コーチ', 'OB'].includes(editMemberForm.role)" class="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-xl border border-gray-200 dark:border-gray-700 mt-2">
+                <label class="block text-sm font-bold text-blue-700 dark:text-blue-400 mb-3">車両情報（車出し可能な場合）</label>
+                <div class="space-y-3">
+                  <input v-model="editMemberForm.vehicleName" type="text" placeholder="車両の呼び名 (例: 山田父号)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                  <input v-model="editMemberForm.vehicleType" type="text" placeholder="車種 (例: アルファード等)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                  <input v-model="editMemberForm.vehicleCapacity" type="number" placeholder="乗車定員 (運転手含む)" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-sm">
+                </div>
+              </div>
+              <div class="flex space-x-4 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <button type="button" @click="closeMemberEditModal" class="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white font-bold py-4 rounded-xl text-base shadow hover:bg-gray-300 dark:hover:bg-gray-700 transition">キャンセル</button>
+                <button type="submit" :disabled="isSavingMemberEdit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-4 rounded-xl shadow-lg text-base transition">{{ isSavingMemberEdit ? '保存中...' : '更新する' }}</button>
+              </div>
             </form>
           </div>
         </div>
@@ -1018,12 +1052,45 @@
           } catch (e) { appState.value = 'dashboard'; showAlert('エラーが発生しました'); }
         };
         const deleteFamilyMember = async (memberId, memberName) => {
-          if (!confirm(`${memberName} を削除しますか？`)) return;
+          if (!confirm(`${memberName} を家族リストから削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
           appState.value = 'loading'; startLoadingProgress();
           try { 
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteFamilyMember', data: { userId: memberId } }) }); 
-            await fetchDashboardData(); showAlert(`${memberName} を削除しました`); 
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
+            await fetchDashboardData(); showAlert(`${memberName} を削除しました。`); 
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました。'); }
+        };
+
+        // --- 家族（本人）情報の編集ロジック ---
+        const isEditingMember = ref(false);
+        const isSavingMemberEdit = ref(false);
+        const editMemberForm = reactive({ userId: '', name: '', role: '', vehicleName: '', vehicleType: '', vehicleCapacity: '' });
+        
+        const openMemberEditModal = (member) => {
+          const u = allUsers.value.find(user => user.id === member.id);
+          editMemberForm.userId = member.id;
+          editMemberForm.name = member.name;
+          editMemberForm.role = member.role;
+          editMemberForm.vehicleName = u ? u.vehicleName || '' : '';
+          editMemberForm.vehicleType = u ? u.vehicleType || '' : '';
+          editMemberForm.vehicleCapacity = u ? u.vehicleCapacity || '' : '';
+          isEditingMember.value = true;
+        };
+        const closeMemberEditModal = () => { isEditingMember.value = false; };
+        
+        const submitMemberEdit = async () => {
+          if (!editMemberForm.name) return;
+          isSavingMemberEdit.value = true; appState.value = 'loading'; startLoadingProgress();
+          try {
+            await fetch(GAS_URL, {
+              method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: 'updateFamilyMember', data: editMemberForm })
+            });
+            closeMemberEditModal(); await fetchDashboardData(); showAlert('登録情報を更新しました！');
+          } catch (e) {
+            appState.value = 'dashboard'; showAlert('通信エラーが発生しました。');
+          } finally {
+            isSavingMemberEdit.value = false;
+          }
         };
 
         // --- サマリー・計算ロジック ---
@@ -1156,7 +1223,8 @@
           isEditing, isSavingEdit, editForm, openEditModal, closeEditModal, submitEditEvent, addSchedule, removeSchedule,
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           newMember, isSaving, isSubmittingEvent, addFamilyMember, deleteFamilyMember,
-          customAlert, closeAlert, showPastEvents, loadingProgress
+          customAlert, closeAlert, showPastEvents, loadingProgress,
+          isEditingMember, isSavingMemberEdit, editMemberForm, openMemberEditModal, closeMemberEditModal, submitMemberEdit
         };
       }
     }).mount('#app');
