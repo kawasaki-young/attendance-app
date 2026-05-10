@@ -1227,7 +1227,7 @@
           const typeStr = evForm.types.join('・');
           const fullTitle = `${typeStr}@${primaryLoc}` + (evForm.detail ? ` (${evForm.detail})` : '');
           
-          cconst payload = {
+          const payload = {
             action: 'createEvent', data: {
               eventType: typeStr, eventTitle: fullTitle, date: evForm.date, 
               depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: primaryGIn,
