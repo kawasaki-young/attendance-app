@@ -563,7 +563,7 @@
                 <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-3"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
                 <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
                 <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">集合時間</label><input v-model="evForm.gatherTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
-                <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3"><label class="text-sm font-bold text-blue-700 dark:text-blue-400 w-1/3">G-in時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 px-4 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800 outline-none text-base font-bold"></div>
+                <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3"><label class="text-sm font-bold text-blue-700 dark:text-blue-400 w-1/3">G-in時間</label><input v-model="editForm.gInTime" type="time" class="w-2/3 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 px-4 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800 outline-none text-base font-bold"></div>
               </div>
 
               <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4">
@@ -716,12 +716,13 @@
         const isAllocating = ref(false);
         const dummyForm = reactive({ type: 'チームバス', capacity: '' });
 
-        const evForm = reactive({ types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gatherOffset: 5, schedules: [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }], selectedItems: [], newItem: '', comment: '', notes: '' });
+        const evForm = reactive({ types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gInTime: '', gatherOffset: 5, schedules: [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }], selectedItems: [], newItem: '', comment: '', notes: '' });
+
         const isCreating = ref(false);
 
         const isEditing = ref(false);
         const isSavingEdit = ref(false);
-        const editForm = reactive({ eventId: '', types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
+        const editForm = reactive({ eventId: '', types: ['練習'], detail: '', date: '', depLocationSelect: '', newDepLocationName: '', newDepLocationUrl: '', departureTime: '', gatherTime: '', gInTime: '', schedules: [], selectedItems: [], comment: '', notes: '' });
 
         const toggleEventType = (form, t) => { if (form.types.includes(t)) { form.types = form.types.filter(item => item !== t); } else { form.types.push(t); } };
         
@@ -959,7 +960,7 @@
           editForm.eventId = ev.id; editForm.types = ev.type ? ev.type.split('・') : ['練習']; editForm.detail = match ? match[1] : '';
           const d = new Date(ev.date); editForm.date = !isNaN(d) ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
           editForm.depLocationSelect = ev.depLocation || ''; editForm.newDepLocationName = ''; editForm.newDepLocationUrl = '';
-          editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime);
+          editForm.departureTime = formatTimeForInput(ev.departureTime); editForm.gatherTime = formatTimeForInput(ev.gatherTime); editForm.gInTime = formatTimeForInput(ev.gInTime);
           if(ev.schedules && ev.schedules.length > 0) {
             editForm.schedules = ev.schedules.map(s => ({ grades: s.grades || ['全学年'], startTime: formatTimeForInput(s.startTime), endTime: formatTimeForInput(s.endTime), locationSelect: s.location || '', newLocationName: '', newLocationUrl: '' }));
           } else {
@@ -991,8 +992,8 @@
           const payload = {
             action: 'updateEvent', data: {
               eventId: editForm.eventId, eventType: typeStr, eventTitle: `${typeStr}@${primaryLoc}` + (editForm.detail ? ` (${editForm.detail})` : ''), date: editForm.date,
-              depLocationName: depLocName, depLocationUrl: depLocUrl || '', isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime,
-              schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
+              depLocationName: depLocName, depLocationUrl: depLocUrl || '', isNewDepLocation: isNewDepLoc, departureTime: editForm.departureTime, gatherTime: editForm.gatherTime, gInTime: editForm.gInTime,
+            schedules: finalSchedules, itemsJoined: editForm.selectedItems.join('、'), comment: editForm.comment, notes: editForm.notes
             }
           };
           try { 
@@ -1168,8 +1169,8 @@
           const payload = {
             action: 'createEvent', data: {
               eventType: typeStr, eventTitle: fullTitle, date: evForm.date, 
-              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, 
-              schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
+              depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: evForm.gInTime,
+            schedules: finalSchedules, itemsJoined: evForm.selectedItems.join('、'), comment: evForm.comment, notes: evForm.notes
             }
           };
           try {
@@ -1205,7 +1206,7 @@
           shareType, selectedShareEvents, selectedAllocationEvents, generatedScheduleText, generatedAllocationText, customScheduleText, customAllocationText, shareToLine,
           newMember, isSaving, isSubmittingEvent, addFamilyMember, deleteFamilyMember,
           isEditingMember, isSavingMemberEdit, editMemberForm, openMemberEditModal, closeMemberEditModal, submitMemberEdit,
-          customAlert, closeAlert, showPastEvents, loadingProgress
+          customAlert, closeAlert, showPastEvents, loadingProgress, requestBackupCar
         };
       }
     }).mount('#app');
