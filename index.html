@@ -1227,7 +1227,7 @@
           const typeStr = evForm.types.join('・');
           const fullTitle = `${typeStr}@${primaryLoc}` + (evForm.detail ? ` (${evForm.detail})` : '');
           
-          const payload = {
+          cconst payload = {
             action: 'createEvent', data: {
               eventType: typeStr, eventTitle: fullTitle, date: evForm.date, 
               depLocationName: depLocName, depLocationUrl: depLocUrl, isNewDepLocation: isNewDepLoc, departureTime: evForm.departureTime, gatherTime: computedGatherTime.value, gInTime: primaryGIn,
@@ -1238,15 +1238,6 @@
             await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
             evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
             evForm.schedules = [{ grades: ['全学年'], gInTime: '', startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
-            evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; evForm.types = ['練習'];
-            currentTab.value = 'events'; 
-            await fetchDashboardData(); showAlert('イベントを作成しました！');
-          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); }
-        };
-          try {
-            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }); 
-            evForm.detail = ''; evForm.date = ''; evForm.depLocationSelect = ''; evForm.newDepLocationName = ''; evForm.newDepLocationUrl = ''; evForm.departureTime = ''; 
-            evForm.schedules = [{ grades: ['全学年'], startTime: '', endTime: '', locationSelect: '', newLocationName: '', newLocationUrl: '' }];
             evForm.selectedItems = []; evForm.comment = ''; evForm.notes = ''; evForm.types = ['練習'];
             currentTab.value = 'events'; 
             await fetchDashboardData(); showAlert('イベントを作成しました！');
