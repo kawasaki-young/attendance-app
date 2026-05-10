@@ -1243,7 +1243,7 @@
             await fetchDashboardData(); showAlert('イベントを作成しました！');
           } catch (e) { appState.value = 'dashboard'; showAlert('通信エラーが発生しました'); }
         };
-
+        
         const formatDate = (dateStr) => { if(!dateStr) return ''; const d = new Date(dateStr); return `${d.getMonth()+1}/${d.getDate()}(${['日','月','火','水','木','金','土'][d.getDay()]})`; };
         const formatTime = (timeStr) => { if(!timeStr) return ''; if (/^\d{1,2}:\d{2}/.test(timeStr)) return timeStr.substring(0, 5); try { const d = new Date(timeStr); if(!isNaN(d)) return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch (e) {} return timeStr; };
         const hasSubmittedAttendance = (eventId) => familyMembers.value.some(member => attendanceRecords.value.find(r => r.eventId === eventId && r.userId === member.id) !== undefined);
