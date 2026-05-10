@@ -278,13 +278,23 @@
                     <textarea v-model="getOrCreateRecord(event.id, member).carComment" rows="1" @input="autoResize" placeholder="連絡事項（例: 午後から参加、同乗希望、荷物あり等）" class="w-full bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none focus:ring-2 focus:ring-ky-lightpink dark:focus:ring-ky-darkpink text-sm shadow-inner transition-colors"></textarea>
                   </div>
 
-                  <div v-if="member.canDrive && getAttendance(event.id, member.id) === '参加'" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                    <span class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">🚗 車出し可能ですか？</span>
-                    <div class="flex space-x-2 w-full flex-wrap gap-y-2">
-                      <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 可</button>
-                      <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">現地直行</button>
-                      <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 不可</button>
-                    </div>
+                  <div v-if="member.canDrive" class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                    <template v-if="getAttendance(event.id, member.id) === '参加'">
+                      <span class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-3">🚗 車出し可能ですか？</span>
+                      <div class="flex space-x-2 w-full flex-wrap gap-y-2">
+                        <button @click="setLocalCarStatus(event.id, member, '可')" :class="getCarStatus(event.id, member.id) === '可' ? 'bg-ky-lightpink dark:bg-ky-darkpink text-gray-900 font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 可</button>
+                        <button @click="setLocalCarStatus(event.id, member, '現地直行')" :class="getCarStatus(event.id, member.id) === '現地直行' ? 'bg-blue-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">現地直行</button>
+                        <button @click="setLocalCarStatus(event.id, member, '不可')" :class="getCarStatus(event.id, member.id) === '不可' ? 'bg-gray-600 text-white font-bold shadow' : 'bg-gray-100 dark:bg-[#222222] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'" class="flex-1 px-2 py-2.5 rounded-lg text-xs transition min-w-[30%]">配車 不可</button>
+                      </div>
+                    </template>
+                    <template v-else-if="getAttendance(event.id, member.id) === '不参加' || getAttendance(event.id, member.id) === '未定'">
+                      <button @click="setLocalCarStatus(event.id, member, getCarStatus(event.id, member.id) === '予備' ? '不可' : '予備')" 
+                        :class="getCarStatus(event.id, member.id) === '予備' ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-gray-100 dark:bg-[#222222] text-gray-500 border-gray-300 dark:border-gray-700'"
+                        class="w-full py-3 rounded-lg border text-xs font-bold transition flex items-center justify-center">
+                        <span class="mr-2">{{ getCarStatus(event.id, member.id) === '予備' ? '✅' : '🚗' }}</span>
+                        車が不足している場合は車出し可能（予備待機）
+                      </button>
+                    </template>
                   </div>
                 </div>
                 <button @click="submitEventAttendance(event.id)" :disabled="isSubmittingEvent === event.id || isSubmittingAll" class="w-full mt-4 bg-gray-300 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold py-3 rounded-xl shadow-sm transition hover:opacity-90 flex justify-center items-center text-sm disabled:opacity-50 border border-gray-400 dark:border-gray-600">
@@ -451,9 +461,14 @@
               <div v-for="car in availableCars" :key="car.userId" class="bg-gray-50 dark:bg-[#1a1a1a] rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow-sm transition" :class="{'opacity-50 grayscale': car.isExempt}">
                 <div class="bg-gray-200 dark:bg-[#222222] px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center">
                   <span class="font-bold text-base text-gray-900 dark:text-white">{{ getVehicleDisplayName(car) }}</span>
-                  <button v-if="myPermission === '配車' || myPermission === '運営'" @click="toggleCarExemption(car)" class="px-3 py-1.5 text-xs font-bold rounded-lg border transition shadow-sm" :class="car.isExempt ? 'bg-red-100 text-red-600 border-red-300 dark:bg-red-900/50 dark:text-red-400 dark:border-red-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white'">
-                    {{ car.isExempt ? '免除中 (解除)' : '配車を免除' }}
-                  </button>
+                  <div class="flex space-x-2">
+                    <button v-if="(myPermission === '配車' || myPermission === '運営') && car.carStatus === '予備'" @click="requestBackupCar(car)" class="px-3 py-1.5 text-xs font-extrabold rounded-lg bg-orange-600 text-white shadow-md hover:bg-orange-700 transition">
+                      配車を依頼する (参加に切替)
+                    </button>
+                    <button v-if="myPermission === '配車' || myPermission === '運営'" @click="toggleCarExemption(car)" class="px-3 py-1.5 text-xs font-bold rounded-lg border transition shadow-sm" :class="car.isExempt ? 'bg-red-100 text-red-600 border-red-300 dark:bg-red-900/50 dark:text-red-400 dark:border-red-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white'">
+                      {{ car.isExempt ? '免除中 (解除)' : '配車を免除' }}
+                    </button>
+                  </div>
                 </div>
                 <div v-if="car.carComment && !car.isExempt" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-medium border-b border-gray-200 dark:border-gray-700">💬 {{ car.carComment }}</div>
                 <ul v-if="!car.isExempt" class="p-3 space-y-2">
@@ -546,8 +561,9 @@
                 <h4 class="text-sm font-bold text-blue-700 dark:text-blue-400 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">【出発/集合】情報</h4>
                 <select v-model="editForm.depLocationSelect" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base"><option value="">(指定なし)</option><option value="NEW">＋ 新しい出発場所を登録</option><option v-for="dep in departureMaster" :key="dep.name" :value="dep.name">{{ dep.name }}</option></select>
                 <div v-if="editForm.depLocationSelect === 'NEW'" class="space-y-3"><input v-model="editForm.newDepLocationName" type="text" placeholder="名前" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"><input v-model="editForm.newDepLocationUrl" type="url" placeholder="URL" class="w-full bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm"></div>
-                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">出発時間</label><input v-model="editForm.departureTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
-                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">集合時間</label><input v-model="editForm.gatherTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
+                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">出発時間</label><input v-model="evForm.departureTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
+                <div class="flex items-center justify-between"><label class="text-sm font-bold text-gray-600 dark:text-gray-300 w-1/3">集合時間</label><input v-model="evForm.gatherTime" type="time" class="w-2/3 bg-white dark:bg-[#222222] text-gray-900 dark:text-white px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 outline-none text-base font-bold"></div>
+                <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3"><label class="text-sm font-bold text-blue-700 dark:text-blue-400 w-1/3">G-in時間</label><input v-model="evForm.gInTime" type="time" class="w-2/3 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 px-4 py-2.5 rounded-lg border border-blue-200 dark:border-blue-800 outline-none text-base font-bold"></div>
               </div>
 
               <div class="bg-gray-50 dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 space-y-4">
@@ -865,28 +881,28 @@
           const targetEvents = sortedEvents.value.filter(e => selectedAllocationEvents.value.includes(e.id));
           targetEvents.forEach(targetEvent => {
             text += `◆${formatDate(targetEvent.date)} ${targetEvent.title}\n`;
+            text += `【集合】${formatTime(targetEvent.departureTime)} 出発 / 集合 ${formatTime(targetEvent.gatherTime)}\n`;
+            text += `【現地】G-in ${formatTime(targetEvent.gInTime)} / 開始 ${formatTime(targetEvent.startTime)}\n`;
+            if (targetEvent.depLocation) text += `@${targetEvent.depLocation}\n`;
+            text += `\n`;
+            
             const carsInEvent = attendanceRecords.value.filter(r => r.eventId === targetEvent.id && (r.carStatus === '可' || r.carStatus === '現地直行' || r.isDummy) && !r.isExempt);
             if (carsInEvent.length === 0) { text += '※配車登録がありません\n\n'; return; }
+            
             carsInEvent.forEach(car => {
               let carName = car.isDummy ? car.name : (allUsers.value.find(u => u.id === car.userId)?.vehicleName || `${car.name}の車`);
               if (car.carStatus === '現地直行') carName += ' [現地直行]';
               text += `【${carName}】\n`;
               const passengers = getPassengersInCar(car.userId, targetEvent.id);
-              if (passengers.length === 0) { 
-                text += '・空席\n'; 
-              } else { 
-                passengers.forEach(p => { 
-                  if (!p.isDummy) {
-                    text += `・${p.name} (${getUserRole(p.userId)})\n`; 
-                  } else {
-                    text += `・${p.name} (荷物)\n`;
-                  }
-                }); 
-              }
+              passengers.forEach(p => { 
+                const nameOnly = p.name; // 属性(roles)を表示しない
+                const typeLabel = p.isDummy ? ' (荷物)' : '';
+                text += `・${nameOnly}${typeLabel}\n`;
+              });
               text += '\n';
             });
           });
-          text += '👇 自分の配車確認はこちら 👇\n'; text += APP_URL;
+          text += '👇 配車確認・地図はこちら 👇\n'; text += APP_URL;
           return text;
         });
 
@@ -1060,7 +1076,17 @@
           };
         });
 
-        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || (r.isDummy && r.carStatus === '可')));
+        const availableCars = computed(() => currentEventAttendance.value.filter(r => r.carStatus === '可' || r.carStatus === '現地直行' || r.carStatus === '予備' || (r.isDummy && r.carStatus === '可')));
+
+        const requestBackupCar = async (car) => {
+          if(!confirm(`${car.name}さんに配車を依頼し、出欠を「参加」に変更しますか？`)) return;
+          appState.value = 'loading'; startLoadingProgress();
+          try {
+            const payload = { action: 'updateAttendance', data: { eventId: globalEventId.value, userId: car.userId, name: car.name, status: '参加', carStatus: '可', carComment: car.carComment } };
+            await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+            await fetchDashboardData(); showAlert(`${car.name}さんを「参加」として配車依頼しました！`);
+          } catch (e) { appState.value = 'dashboard'; showAlert('通信エラー'); }
+        };
         const unassignedPassengers = computed(() => currentEventAttendance.value.filter(r => (r.status === '参加' && !r.isDummy && !r.assignTo) || (r.isDummy && r.carStatus === '不可' && !r.assignTo)));
         const getVehicleDisplayName = (car) => {
           let cap = 0; let name = '';
